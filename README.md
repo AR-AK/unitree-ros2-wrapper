@@ -33,38 +33,9 @@ Step 6:
 sudo ./b2 install
 ```
 
-- OpenCV2
-```
-pip install opencv-python
-```
 - udev
 ```
 # In terminal:
 sudo apt update
 sudo apt install libudev-dev
-```
-# How to install
-- Install the package to your home directory.
-
-- Ensure all dependencies are installed
-
-- In the terminal navigate to the head directory
-```
-cd ~/Ros2-Humble-interface-for-Unitree-Go1
-```
-- Build the package
-```
-Colcon Build
-```
-
-- Source bash.rc
-```
-source install/setup.bash
-```
-
-- Connect to the Go1 wireless network
-
-- Run the package launch file
-```
-ros2 launch unitree_ros2_cpp go1.launch.py
 ```
