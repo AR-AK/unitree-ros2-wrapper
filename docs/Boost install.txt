@@ -1,0 +1,28 @@
+--  Boost version needed 1.65 
+
+Manual Install:
+
+Step 1:
+https://www.boost.org/users/history/version_1_65_0.html
+-- Download: boost_1_65_0.tar.gz
+
+Step 2:
+Open terminal and run:
+cd Downloads/
+tar -xzf boost_1_65_0.tar.gz 
+
+Step 3:
+Once unpackaged:
+cd boost_1_65_0/
+
+Step 4:
+./bootstrap.sh
+
+Step 5:
+sudo ./b2
+
+Step 6:
+sudo ./b2 install
+
+# Just to be safe:
+sudo ldconfig
