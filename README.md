@@ -1,7 +1,7 @@
 # ROS2 Wrapper of Unitree SDK for Go1 Robot
 
 # About
-This is a ROS2 Wraper package to replace the developer api for the no-longer supported Unitree_Legged_SDK. The wrppaer is streamlined to focus only on motion.
+This is a ROS2 Wraper package to replace the developer api for the no-longer supported Unitree_Legged_SDK. Forked from this [repo](https://github.com/OmniaUK/Ros2-Humble-interface-for-Unitree-Go1) and streamlined to focus only on motion.
 
 # Dependencies
 - ROS2 (desktop full)
