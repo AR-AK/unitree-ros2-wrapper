@@ -11,14 +11,14 @@
 #include <thread>
 #include <pthread.h>
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+#include <functional>
+#include <memory>
 
 namespace UNITREE_LEGGED_SDK {
 
 constexpr int THREAD_PRIORITY = 95;  // real-time priority
 
-typedef boost::function<void()> Callback;
+typedef std::function<void()> Callback;
 
 class Loop {
  public:
@@ -53,7 +53,7 @@ class LoopFunc : public Loop {
   void functionCB() { (_fp)(); }
 
  private:
-  boost::function<void()> _fp;
+  std::function<void()> _fp;
 };
 
 }  // namespace UNITREE_LEGGED_SDK

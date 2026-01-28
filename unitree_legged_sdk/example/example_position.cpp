@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdint.h>
+#include <functional>
 
 using namespace std;
 using namespace UNITREE_LEGGED_SDK;
@@ -152,9 +153,9 @@ int main(void)
 
   Custom custom(LOWLEVEL);
   // InitEnvironment();
-  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
-  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
-  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+  LoopFunc loop_control("control_loop", custom.dt, std::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, std::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, std::bind(&Custom::UDPRecv, &custom));
 
   loop_udpSend.start();
   loop_udpRecv.start();

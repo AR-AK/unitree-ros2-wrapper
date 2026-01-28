@@ -11,7 +11,6 @@
 #include "loop.h"
 #include "quadruped.h"
 #include "joystick.h"
-#include <boost/bind.hpp>
 
 #define UT UNITREE_LEGGED_SDK  // short name
 

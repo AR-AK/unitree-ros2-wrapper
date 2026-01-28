@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(unitree_legged_sdk)
 
 # check arch and os
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64.*")
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64.*" OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "amd64.*")
   set(ARCH amd64)
 endif()
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64.*")
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64.*" OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm64.*")
   set(ARCH arm64)
 endif()
 
@@ -21,7 +21,8 @@ endif()
 set(EXTRA_LIBS -pthread libunitree_legged_sdk.a)
 set(CMAKE_CXX_FLAGS "-O3")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(catkin QUIET)
 if(${catkin_FOUND})

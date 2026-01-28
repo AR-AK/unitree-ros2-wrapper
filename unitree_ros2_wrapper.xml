@@ -1,0 +1,3657 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: **/*.cpp, **/*.h, **/*.hpp, **/*.yaml, **/CMakeLists.txt, **/package.xml, **/*.launch, **/*.cmake.in, **/*.msg
+- Files matching these patterns are excluded: **/Thirdparty/, **/ORBvoc.*, **/docs, unitree_legged_sdk/python_wrapper
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+msg/
+  BmsCmd.msg
+  BmsState.msg
+  Cartesian.msg
+  HighCmd.msg
+  HighState.msg
+  IMU.msg
+  LED.msg
+  LowCmd.msg
+  LowState.msg
+  MotorCmd.msg
+  MotorState.msg
+src/
+  Templates/
+    examplePublisher.cpp
+    exampleSubscriber.cpp
+    templatePubSub.cpp
+    udp_bridge.cpp
+  legged_controller.cpp
+unitree_legged_sdk/
+  example/
+    example_joystick.cpp
+    example_position.cpp
+    example_torque.cpp
+    example_velocity.cpp
+    example_walk.cpp
+  include/
+    unitree_legged_sdk/
+      a1_const.h
+      aliengo_const.h
+      b1_const.h
+      comm.h
+      go1_const.h
+      joystick.h
+      loop.h
+      quadruped.h
+      safety.h
+      udp.h
+      unitree_legged_sdk.h
+  CMakeLists.txt
+  package.xml
+CMakeLists.txt
+package.xml
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="msg/BmsCmd.msg">
+uint8 off            # off 0xA5
+uint8[3] reserve
+</file>
+
+<file path="msg/BmsState.msg">
+uint8 version_h
+uint8 version_l
+uint8 bms_status
+uint8 soc #SOC             # SOC 0-100%
+int32 current              # mA
+uint16 cycle
+int8[2] bq_ntc #BQ_NTC     # x1 degrees centigrade
+int8[2] mcu_ntc #MCU_NTC   # x1 degrees centigrade
+uint16[10] cell_vol        # cell voltage mV
+</file>
+
+<file path="msg/Cartesian.msg">
+float32 x
+float32 y
+float32 z
+</file>
+
+<file path="msg/HighCmd.msg">
+# uint8[2] head # Not in use
+#uint8 level_flag #levelFlag # Not in use
+# uint8 frame_reserve #frameReserve # Not in use
+
+# uint32[2] sn #SN  -- Dont want to change the SN
+# uint32[2] version -- Dont want to change the version
+# uint16 bandwidth #bandWidth # Not in use
+
+uint8 mode  #// 0. idle, default stand
+            #// 1. force stand (controlled by dBodyHeight + ypr)
+            #// 2. target velocity walking (controlled by velocity + yawSpeed)
+            #// 3. target position walking (controlled by position + ypr[0]), reserve
+            #// 4. path mode walking (reserve for future release), reserve
+            #// 5. position stand down.
+            #// 6. position stand up
+            #// 7. damping mode
+            #// 8. recovery stand
+            #// 9. backflip, reserve
+            #// 10. jumpYaw, only left direction. Note, to use this mode, you need to set mode = 1 first.
+            #// 11. straightHand. Note, to use this mode, you need to set mode = 1 first.
+            #// 12. Dance 1. Note, to use this mode, you need to set mode = 1 first.
+            #// 13. Dance 3. Note, to use this mode, you need to set mode = 1 first.
+
+uint8 gait_type #gaitType		// 0.idle
+                           #// 1.trot
+                           #// 2.trot running
+                           #// 3.climb stair
+                           #// 4.trot obstacle   
+
+# uint8 speed_level #speedLevel # Not in use	
+
+float32 foot_raise_height #footRaiseHeight		   
+float32 body_height #bodyHeight	   
+
+float32[2] position #(unit: m), desired position in inertial frame. linear [x, y]
+
+float32[3] euler #(unit: rad), roll pitch yaw in stand mode
+                 #// (unit: rad), roll pitch yaw in stand mode
+                 #// (range: roll : -0.75~0.75rad)
+                 #// (range: pitch: -0.75~0.75rad)
+                 #// (range: yaw  : -0.6~0.6rad)
+                 #// [roll, pitch, yaw]
+
+float32[2] velocity #(unit: m/s), [forwardSpeed, sideSpeed] in body frame
+
+float32 yaw_speed # yawSpeed	// (unit: rad/s), rotateSpeed in body frame
+                             #// (range: trot : -4.0~4.0rad/s)
+                             #// (range: run  : -4.0~4.0rad/s)
+                             #// (range: stair: -0.7~0.7rad/s)	
+
+# BmsCmd bms # Not in use
+# LED[4] led # Not in use
+# uint8[40] wireless_remote #wirelessRemote # Not in use
+# uint32 reserve # Not in use
+
+# uint32 crc # Not in use
+</file>
+
+<file path="msg/HighState.msg">
+# uint8[2] head # Not in use
+# uint8 level_flag #levelFlag # Not in use
+# uint8 frame_reserve #frameReserve # Not in use
+
+uint32[2] sn #SN
+uint32[2] version
+uint16 bandwidth #bandWidth
+# IMU imu # Not in use
+# MotorState[20] motor_state #motorState # Not in use
+#BmsState bms # Excluded due to dedicated BMS topic
+int16[4] foot_force #footForce
+# int16[4] foot_force_est #footForceEst # Not in use
+
+uint8 mode #// 0. idle, default stand
+            #// 1. force stand (controlled by dBodyHeight + ypr)
+            #// 2. target velocity walking (controlled by velocity + yawSpeed)
+            #// 3. target position walking (controlled by position + ypr[0]), reserve
+            #// 4. path mode walking (reserve for future release), reserve
+            #// 5. position stand down.
+            #// 6. position stand up
+            #// 7. damping mode
+            #// 8. recovery stand
+            #// 9. backflip, reserve
+            #// 10. jumpYaw, only left direction. Note, to use this mode, you need to set mode = 1 first.
+            #// 11. straightHand. Note, to use this mode, you need to set mode = 1 first.
+            #// 12. Dance 1. Note, to use this mode, you need to set mode = 1 first.
+            #// 13. Dance 3. Note, to use this mode, you need to set mode = 1 first.
+
+# float32 progress # Not in use
+
+uint8 gait_type #gaitType 	// 0.idle
+                           #// 1.trot
+                           #// 2.trot running
+                           #// 3.climb stair
+                           #// 4.trot obstacle 
+
+float32 foot_raise_height #footRaiseHeight	
+
+float32[3] position #(unit: m), position in inertial frame. linear [x, y, z?]
+
+float32 body_height #bodyHeight			
+
+float32[3] velocity #(unit: m/s), [forwardSpeed, sideSpeed] in body frame
+
+float32 yaw_speed #yawSpeed		// (unit: rad/s), rotateSpeed in body frame
+                             #// (range: trot : -4.0~4.0rad/s)
+                             #// (range: run  : -4.0~4.0rad/s)
+                             #// (range: stair: -0.7~0.7rad/s)	
+                             			   
+# float32[4] range_obstacle #rangeObstacle # Not in use
+# Cartesian[4] foot_position_to_body #footPosition2Body # Not in use
+# Cartesian[4] foot_speed_to_body #footSpeed2Body	# Not in use
+# uint8[40] wireless_remote #wirelessRemote # Not in use
+# uint32 reserve # Not in use
+
+# uint32 crc # Not in use
+</file>
+
+<file path="msg/IMU.msg">
+float32[4] quaternion
+float32[3] gyroscope
+float32[3] accelerometer
+float32[3] rpy
+int8 temperature
+</file>
+
+<file path="msg/LED.msg">
+uint32 id # pixel ID between 0-11 (0-5 = right of face / 6-11 = left of face)
+uint8 r  # Red value (0-255)
+uint8 g  # Green value (0-255)
+uint8 b  # Blue value (0-255)
+</file>
+
+<file path="msg/LowCmd.msg">
+uint8[2] head
+uint8 level_flag #levelFlag
+uint8 frame_reserve #frameReserve
+
+uint32[2] sn #SN
+uint32[2] version
+uint16 bandwidth #bandWidth
+MotorCmd[20] motor_cmd #motorCmd
+BmsCmd bms
+uint8[40] wireless_remote #wirelessRemote
+uint32 reserve
+
+uint32 crc
+</file>
+
+<file path="msg/LowState.msg">
+uint8[2] head
+uint8 level_flag #levelFlag
+uint8 frame_reserve #frameReserve
+
+uint32[2] sn #SN
+uint32[2] version
+uint16 bandwidth #bandWidth
+IMU imu
+MotorState[20] motor_state #motorState
+BmsState bms
+int16[4] foot_force #footForce	
+int16[4] foot_force_est #footForceEst	
+uint32 tick						
+uint8[40] wireless_remote #wirelessRemote 
+uint32 reserve
+uint32 crc
+
+# Old version Aliengo does not have:
+Cartesian[4] ee_force_raw #eeForceRaw
+Cartesian[4] ee_force #eeForce          #it's a 1-DOF force infact, but we use 3-DOF here just for visualization 
+Cartesian position            # will delete
+Cartesian velocity            # will delete
+Cartesian velocity_w            # will delete
+</file>
+
+<file path="msg/MotorCmd.msg">
+uint8 mode           # motor target mode
+float32 q            # motor target position
+float32 dq           # motor target velocity
+float32 tau          # motor target torque
+float32 kp #Kp       # motor spring stiffness coefficient
+float32 kd #Kd       # motor damper coefficient
+uint32[3] reserve    # motor target torque
+</file>
+
+<file path="msg/MotorState.msg">
+uint8 mode               # motor current mode 
+float32 q                # motor current position（rad）
+float32 dq               # motor current speed（rad/s）
+float32 ddq              # motor current speed（rad/s）
+float32 tau_est #tauEst  # current estimated output torque（N*m）
+float32 q_raw            # motor current position（rad）
+float32 dq_raw           # motor current speed（rad/s）
+float32 ddq_raw          # motor current speed（rad/s）
+int8 temperature         # motor temperature（slow conduction of temperature leads to lag）
+uint32[2] reserve
+</file>
+
+<file path="src/Templates/examplePublisher.cpp">
+// Copyright 2016 Open Source Robotics Foundation, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// PHS: Original file obtained from: https://raw.githubusercontent.com/ros2/examples/humble/rclcpp/topics/minimal_publisher/member_function.cpp 18th Sept 2023, 11:36
+// PHS: File renamed from publisher_member_function.cpp
+// PHS: Renamed class from MinimalPublisher
+// PHS: Additional comments added to document the code
+// PHS: Modified topic name used
+
+//https://en.cppreference.com/w/cpp/chrono
+#include <chrono> // provides system_clock, times and durations
+
+//https://en.cppreference.com/w/cpp/header/functional
+#include <functional> // provides the std::bind()
+
+//https://en.cppreference.com/w/cpp/header/memory
+#include <memory> // provides std::make_shared<Class>()
+
+//https://en.cppreference.com/w/cpp/header/string
+#include <string> // provides std::to_string()
+
+//ROS 2 Specific includes
+//https://docs.ros2.org/latest/api/rclcpp/rclcpp_8hpp.html
+#include "rclcpp/rclcpp.hpp" // includes most common libraries for ROS 2
+//https://index.ros.org/p/std_msgs/
+//https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html
+#include "std_msgs/msg/u_int32.hpp" // provides basic Unsigned Int32 message type for publishing data
+
+//Important: these includes should be reflected in the package.xml and CMakeLists.txt
+
+//Namespace specified for simplfication when using chrono library
+using namespace std::chrono_literals;
+
+/* This example creates a subclass of Node and uses std::bind() to register a
+ * member function as a callback from the timer. */
+
+//Declaring a new class as a subclass of the ROS 2 Node class
+class ExamplePublisher : public rclcpp::Node
+{
+public:
+  //Constructor, specifying node name and initialising a counter
+  ExamplePublisher()
+  : Node("example_publisher"), count_(0)
+  {
+    // Create the instance of the publisher that will publish messages
+    // of type std_msgs/mgs/UInt32 to the topic "/hello/world"
+    // a queue length of 10 is specified here for the topic
+    publisher_ = this->create_publisher<std_msgs::msg::UInt32>("/hello/world", 10);
+
+    // Create a timer that will trigger calls to the method timer_callback
+    // every 0.5s
+    timer_ = this->create_wall_timer(
+      500ms, std::bind(&ExamplePublisher::timer_callback, this));
+  }
+
+private:
+  // This method will be called automatically by the timer
+  // at the specified intervals
+  void timer_callback()
+  {
+    //Create an instance of the UInt32 message type
+    auto message = std_msgs::msg::UInt32();
+
+    //Set the pre-defined field "data" in the message to a positive integer value,
+    // incrementing the counter each time a message is constructed
+    message.data = count_++;
+
+    //Add ROS 2 logger entry with details of the message (print message to console)
+    RCLCPP_INFO(this->get_logger(), "Publishing: msg.data=%i", message.data);
+
+    //publish the message created above to the topic /hello/world
+    publisher_->publish(message);
+  }
+
+  //Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Publisher<std_msgs::msg::UInt32>::SharedPtr publisher_;
+  size_t count_;
+};
+
+//Main method defining entry point for program
+int main(int argc, char * argv[])
+{
+  //Initialise ROS 2 for this node
+  rclcpp::init(argc, argv);
+
+  //Create the instance of the Node subclass and 
+  // start the spinner with a pointer to the instance
+  // This will keep the node running until interupted by ROS or node returns
+  rclcpp::spin(std::make_shared<ExamplePublisher>());
+
+  //When the node is terminated, shut down ROS 2 for this node
+  rclcpp::shutdown();
+  return 0;
+}
+</file>
+
+<file path="src/Templates/exampleSubscriber.cpp">
+// Copyright 2016 Open Source Robotics Foundation, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// PHS: Original file obtained from: wget -O subscriber_member_function.cpp https://raw.githubusercontent.com/ros2/examples/humble/rclcpp/topics/minimal_subscriber/member_function.cpp 18 Sept, 14:45
+// PHS: File renamed from subscriber_member_function.cpp
+// PHS: Renamed class from MinimalSubscriber
+// PHS: Additional comments added to document the code
+// PHS: Modified topic name used
+
+//https://en.cppreference.com/w/cpp/header/functional
+#include <functional> // provides the std::bind() and placeholders
+
+//https://en.cppreference.com/w/cpp/header/memory
+#include <memory> // provides std::make_shared<Class>()
+
+//ROS 2 Specific includes
+//https://docs.ros2.org/latest/api/rclcpp/rclcpp_8hpp.html
+#include "rclcpp/rclcpp.hpp" // includes most common libraries for ROS 2
+//https://index.ros.org/p/std_msgs/
+//https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html
+#include "std_msgs/msg/u_int32.hpp" // provides basic Unsigned int32 message type for publishing data
+
+//Namespace specified for simplfication when using placeholders library
+using std::placeholders::_1;
+
+/* This example creates a subclass of Node and uses std::bind() to register a
+ * member function as a callback from the subscriber. */
+
+//Declaring a new class as a subclass of the ROS 2 Node class
+class ExampleSubscriber : public rclcpp::Node
+{
+public:
+  //Constructor specifying node name for superclass
+  ExampleSubscriber()
+  : Node("minimal_subscriber")
+  {
+    // Create the instance of the subscriber that will receive messages
+    // of type std_msgs/mgs/UInt32 published to the topic "/hello/world"
+    // a queue length of 10 is specified here and a reference is given
+    // to the topic_callback method that will process messages that are received.
+    subscription_ = this->create_subscription<std_msgs::msg::UInt32>(
+      "/hello/world", 10, std::bind(&ExampleSubscriber::topic_callback, this, _1));
+  }
+
+private:
+  // Private function that will be triggered automatically when messages are received
+  // from the topic /hello/world
+  // The parameter specifies the expected message type, which must match
+  // the type published to the topic
+  void topic_callback(const std_msgs::msg::UInt32 & msg)
+  {
+    //Logger used to print details of the message received (printed to console).
+    RCLCPP_INFO(this->get_logger(), "I heard: msg.data=%i", msg.data);
+  }
+
+  //Declaration of private fields used for subscriber
+  rclcpp::Subscription<std_msgs::msg::UInt32>::SharedPtr subscription_;
+};
+
+//Main method defining entry point for program
+int main(int argc, char * argv[])
+{
+  //Initialise ROS 2 for this node
+  rclcpp::init(argc, argv);
+
+  //Create the instance of the Node subclass and 
+  // start the spinner with a pointer to the instance
+  rclcpp::spin(std::make_shared<ExampleSubscriber>());
+
+  //When the node is terminated, shut down ROS 2 for this node
+  rclcpp::shutdown();
+  return 0;
+}
+</file>
+
+<file path="src/Templates/templatePubSub.cpp">
+// PHS: Template combining together publisher and subscriber examples
+
+//General C++ includes as needed
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <string>
+
+//ROS 2 Specific includes
+//Important: these includes should be reflected in the package.xml and CMakeLists.txt
+#include "rclcpp/rclcpp.hpp"
+
+// TODO: Add or replace with message type needed
+#include "std_msgs/msg/u_int32.hpp" 
+
+using namespace std::chrono_literals;
+using std::placeholders::_1;
+
+/* Template giving outline for creating a program
+ * that contains both a publisher and subscriber.
+ */
+
+class PubSubTemplate : public rclcpp::Node
+{
+public:
+  //TODO: Update node name to reflect purpose of node
+  PubSubTemplate() : Node("pub_sub_template")
+  {
+    // TODO: Update message type and topic name as appropriate for the publisher. Remember to update private field too.
+    publisher_ = this->create_publisher<std_msgs::msg::UInt32>("/hello/world", 10);
+
+    // TODO: Update message type and topic name as appropriate for the subscriber. Remember to update private field too.
+     subscription_ = this->create_subscription<std_msgs::msg::UInt32>(
+       "/hello/world", 10, std::bind(&PubSubTemplate::topic_callback, this, _1));
+    
+    // Create a timer that will trigger calls to the method timer_callback
+    // Multiple timers with different durations can be used as necessary.
+    // TODO: Update timer duration as required
+    timer_ = this->create_wall_timer(
+      500ms, std::bind(&PubSubTemplate::timer_callback, this));
+  }
+
+private:
+
+  //TODO rename method, especially if having multiple timers.
+  void timer_callback()
+  {
+    //TODO add behaviour here to be repeated at regular intervals
+
+    //Create an instance of the appropriate message type for publishing
+    auto message = std_msgs::msg::UInt32();
+
+    //Set the values for necessary fields in message type
+    // On the commandline use
+    //   $ ros2 interface show std_msgs/msg/UInt32
+    // To check fields of message type
+    message.data = count_;
+
+    //Log output for message to be published
+    RCLCPP_INFO(this->get_logger(), "Publishing: msg.data=%i", message.data);
+
+    //publish the message to topic
+    publisher_->publish(message);
+  }
+
+  //TODO rename method to better reflect topic it is subscribed to
+  //TODO update message type as appropriate
+  void topic_callback(const std_msgs::msg::UInt32 & msg)
+  {
+    //Log output of message received
+    // On the commandline use
+    //   $ ros2 interface show std_msgs/msg/UInt32
+    // To check fields of message type
+    //TODO update fields used from pre-defined message type
+    RCLCPP_INFO(this->get_logger(), "I heard: msg.data=%i", msg.data);
+    // Update class variables (based on message data)
+    count_++;
+  }
+
+  //Declaration of private fields used for timer, publisher and subscriber
+  //TODO: Update message types as appropriate for publishers and subscribers
+  //Add other class variables here.
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Publisher<std_msgs::msg::UInt32>::SharedPtr publisher_;
+  rclcpp::Subscription<std_msgs::msg::UInt32>::SharedPtr subscription_;
+  size_t count_;
+};
+
+//Main method defining entry point for program
+int main(int argc, char * argv[])
+{
+  //Initialise ROS 2 for this node
+  rclcpp::init(argc, argv);
+
+  //Create the instance of the Node subclass and 
+  // start the spinner with a pointer to the instance
+  rclcpp::spin(std::make_shared<PubSubTemplate>());
+
+  //When the node is terminated, shut down ROS 2 for this node
+  rclcpp::shutdown();
+  return 0;
+}
+</file>
+
+<file path="src/Templates/udp_bridge.cpp">
+/* This is an example file to test the UDP control
+*/
+
+// SDK includes
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+
+// General includes
+#include <math.h>
+#include <iostream>
+#include <unistd.h>
+#include <string>
+
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.12.1", 8082)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPRecv();
+  void UDPSend();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  HighCmd cmd = {};
+  HighState state = {};
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+  udp.GetRecv(state);
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+void Custom::RobotControl()
+{
+  motiontime += 2;
+  //   printf("%d   %f\n", motiontime, state.imu.quaternion[2]);
+  cmd.mode = 0; // 0:idle, default stand      1:forced stand     2:walk continuously
+  cmd.gaitType = 0;
+  cmd.speedLevel = 0;
+  cmd.footRaiseHeight = 0;
+  cmd.bodyHeight = 0;
+  cmd.euler[0] = 0;
+  cmd.euler[1] = 0;
+  cmd.euler[2] = 0;
+  cmd.velocity[0] = 0.0f;
+  cmd.velocity[1] = 0.0f;
+  cmd.yawSpeed = 0.0f;
+  cmd.reserve = 0;
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to HIGH-level." << std::endl
+            << "WARNING: Make sure the robot is standing on the ground." << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(HIGHLEVEL);
+
+  std::string sysState = " ";
+
+  while (1)
+  {
+    sysState = std::to_string(custom.state.bms.SOC);
+    std::cout << "Battery: %" + sysState << std::endl;
+    sysState = std::to_string(custom.state.imu.temperature);
+    std::cout << "Temp(C): " + sysState << std::endl;
+    sysState = std::to_string(custom.state.velocity[0]);
+    std::cout << "Forward Speed: " + sysState + "m/s" << std::endl;
+    custom.cmd.mode = 2;
+    custom.cmd.gaitType = 1;
+    custom.cmd.velocity[0] = 0.1f;
+    custom.udp.SetSend(custom.cmd);
+
+    sleep(1);
+    sleep(1);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="src/legged_controller.cpp">
+// Copyright 2016 Open Source Robotics Foundation, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// PHS: Original file obtained from: https://raw.githubusercontent.com/ros2/examples/humble/rclcpp/topics/minimal_publisher/member_function.cpp 18th Sept 2023, 11:36
+// PHS: File renamed from publisher_member_function.cpp
+// PHS: Renamed class from MinimalPublisher
+// PHS: Additional comments added to document the code
+// PHS: Modified topic name used
+// Hab75: Modified topic name and use to legged_controller for Unitree Go1.
+
+/*
+About: A Ros publisher file that takes recived UDP data from a unitree Go1 to publush
+*/
+
+// https://en.cppreference.com/w/cpp/chrono
+#include <chrono> // provides system_clock, times and durations
+
+// https://en.cppreference.com/w/cpp/header/functional
+#include <functional> // provides the std::bind()
+
+// https://en.cppreference.com/w/cpp/header/memory
+#include <memory> // provides std::make_shared<Class>()
+
+// https://en.cppreference.com/w/cpp/header/string
+#include <string> // provides std::to_string()
+
+// General includes
+#include <math.h>
+#include <iostream>
+#include <unistd.h>
+
+// ROS 2 Specific includes
+// https://docs.ros2.org/latest/api/rclcpp/rclcpp_8hpp.html
+#include "rclcpp/rclcpp.hpp" // includes most common libraries for ROS 2
+// https://index.ros.org/p/std_msgs/
+// https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html
+#include "geometry_msgs/msg/twist.hpp" // twist msg https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Twist.html
+
+#include "sensor_msgs/msg/imu.hpp" // IMU msg https://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Imu.html
+#include "sensor_msgs/msg/temperature.hpp" // Temprature msg
+
+#include "nav_msgs/msg/odometry.hpp" // Odom msg https://docs.ros.org/en/jade/api/nav_msgs/html/msg/Odometry.html
+
+// Unitree ros to real msg's
+// Edited to comply with syntax constraints.
+#include "unitree_ros2_cpp/msg/bms_state.hpp"
+#include "unitree_ros2_cpp/msg/high_state.hpp"
+#include "unitree_ros2_cpp/msg/high_cmd.hpp"
+#include "unitree_ros2_cpp/msg/motor_state.hpp"
+#include "unitree_ros2_cpp/msg/motor_cmd.hpp"
+
+// Important: these includes should be reflected in the package.xml and CMakeLists.txt
+
+// UnitreeSDK includes
+/*IMPORTANT SOURCE: https://unitree-docs.readthedocs.io/en/latest/get_started/Go1_Edu.html*/
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+
+// IP Address to Pi   (Default: WiFi - 192.168.12.1,   Ethernet - 192.168.123.161)
+const char* piAddress = "192.168.12.1";
+
+// Namespace specified for simplfication when using chrono library
+using namespace UNITREE_LEGGED_SDK;
+using namespace std::chrono_literals;
+
+/* Legged SDK UDP initializer class.
+This class sets up a UDP connection to the robot.
+Code sourced & modified from exampleWalk in the unitree_legged_sdk/examples
+*/
+class UDPLegged
+{
+public: // <- Change to your robot model- Aliengo, A1, Go1 (Tested), B1
+  UDPLegged(uint8_t level) : safe(LeggedType::Go1),
+                             udp(level, 8090, piAddress, 8082)
+  {
+    udp.InitCmdData(cmd);
+  }
+
+  void UDPRecv();
+  void UDPSend();
+
+  Safety safe;
+  UDP udp;
+  HighCmd cmd = {}; // Left
+  HighState state = {};
+};
+
+void UDPLegged::UDPRecv()
+{
+  udp.Recv();
+  udp.GetRecv(state);
+}
+
+void UDPLegged::UDPSend()
+{
+  udp.Send();
+}
+UDPLegged udpLegged(HIGHLEVEL); // object creation for callback
+
+
+/*
+ * UDP loop service node (would be a ros service but running out of time towards the deadline. This is a hotfix)
+ * runs the UDPRecv & UDPSend commands repeatedly. (Will automatically reconnect once the robot is seen on network again)
+ * This is to ensure the latest data is recived.
+*/
+class UDPLoopService : public rclcpp::Node
+{
+public:
+  UDPLoopService() 
+    : Node("UDPServer")
+    {
+      RCLCPP_INFO(this->get_logger(), "UDP Server started.");
+
+      // Start timer loop to update the UDP data
+        timer_udp = this->create_wall_timer(
+            3ms, std::bind(&UDPLoopService::udp_callback, this));
+        
+    }
+  private:
+  void udp_callback()
+  {
+    udpLegged.UDPSend();
+    udpLegged.UDPRecv();
+  }
+  rclcpp::TimerBase::SharedPtr timer_udp;
+};
+// End of UDP setup
+
+
+
+
+
+
+// Start of Ros Nodes
+
+// Declaring a new class as a subclass of the ROS 2 Node class
+class LeggedDataRX : public rclcpp::Node
+{
+
+public:
+  // Constructor, specifying node name and initialising a counter
+  LeggedDataRX()
+      : Node("LeggedDataRX"), count_(0)
+  {
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/bms_state to the topic "/legged_data/sensors/bms"
+    // a queue length of 10 is specified here for the topic
+    bms_publisher = this->create_publisher<unitree_ros2_cpp::msg::BmsState>("legged_data/sensors/bms", 10);
+    // Create a timer that will trigger calls to the method bms_callback
+    // every 0.65s
+    timer_bms = this->create_wall_timer(
+        650ms, std::bind(&LeggedDataRX::bms_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/high_state to the topic "/legged_data/sensors/foot_force"
+    // a queue length of 10 is specified here for the topic
+    foot_force_publisher = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/sensors/foot_force", 10);
+    // Create a timer that will trigger calls to the method footForce_callback
+    // every 0.15s
+    timer_foot_force = this->create_wall_timer(
+        150ms, std::bind(&LeggedDataRX::footForce_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type sensor_msgs/msg/IMU to the topic "/legged_data/sensors/imu"
+    // a queue length of 10 is specified here for the topic
+    imu_publisher = this->create_publisher<sensor_msgs::msg::Imu>("legged_data/sensors/imu", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 0.05s
+    timer_imu = this->create_wall_timer(
+        50ms, std::bind(&LeggedDataRX::imu_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/HighState to the topic "/legged_data/status/mode"
+    // a queue length of 10 is specified here for the topic
+    mode_publisher = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/mode", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 0.7s
+    timer_mode = this->create_wall_timer(
+        700ms, std::bind(&LeggedDataRX::mode_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type sensor_msgs/Temperature to the topic "/legged_data/sensors/system_temperature"
+    // a queue length of 10 is specified here for the topic
+    temp_publisher = this->create_publisher<sensor_msgs::msg::Temperature>("legged_data/sensors/system_temperature", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 1.0s
+    timer_temp = this->create_wall_timer(
+        1000ms, std::bind(&LeggedDataRX::temp_callback, this));
+
+        
+    // Create the instance of the publisher that will publish messages
+    // of type nav_msgs/Odometry to the topic "/odom"
+    // a queue length of 10 is specified here for the topic
+    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 0.15s
+    timer_odom = this->create_wall_timer(
+        150ms, std::bind(&LeggedDataRX::odom_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/HighState to the topic "/legged_data/status/gait_type"
+    // a queue length of 10 is specified here for the topic
+    gait_publisher = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/gait_type", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 0.7s
+    timer_gait = this->create_wall_timer(
+        700ms, std::bind(&LeggedDataRX::gait_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/HighState to the topic "/legged_data/status/about_go1"
+    // a queue length of 10 is specified here for the topic
+    about_publisher = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/about_go1", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 60s
+    timer_about = this->create_wall_timer(
+        60s, std::bind(&LeggedDataRX::about_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/HighState to the topic "/legged_data/status/foot_raise_height"
+    // a queue length of 10 is specified here for the topic
+    foot_raise_height_publisher = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/foot_raise_height", 10);
+    // Create a timer that will trigger calls to the method imu_callback
+    // every 0.7s
+    timer_foot_raise_height = this->create_wall_timer(
+        700ms, std::bind(&LeggedDataRX::foot_raise_height_callback, this));
+
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_0"
+    // a queue length of 10 is specified here for the topic
+    motor_0_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_0", 10);
+    // Create a timer that will trigger calls to the method motor_0_callback
+    // every 200ms
+    timer_motor_0 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_0_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_1"
+    // a queue length of 10 is specified here for the topic
+    motor_1_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_1", 10);
+    // Create a timer that will trigger calls to the method motor_1_callback
+    // every 200ms
+    timer_motor_1 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_1_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_2"
+    // a queue length of 10 is specified here for the topic
+    motor_2_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_2", 10);
+    // Create a timer that will trigger calls to the method motor_2_callback
+    // every 200ms
+    timer_motor_2 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_2_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_3"
+    // a queue length of 10 is specified here for the topic
+    motor_3_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_3", 10);
+    // Create a timer that will trigger calls to the method motor_3_callback
+    // every 200ms
+    timer_motor_3 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_3_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_4"
+    // a queue length of 10 is specified here for the topic
+    motor_4_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_4", 10);
+    // Create a timer that will trigger calls to the method motor_4_callback
+    // every 200ms
+    timer_motor_4 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_4_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_5"
+    // a queue length of 10 is specified here for the topic
+    motor_5_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_5", 10);
+    // Create a timer that will trigger calls to the method motor_5_callback
+    // every 200ms
+    timer_motor_5 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_5_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_6"
+    // a queue length of 10 is specified here for the topic
+    motor_6_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_6", 10);
+    // Create a timer that will trigger calls to the method motor_6_callback
+    // every 200ms
+    timer_motor_6 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_6_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_7"
+    // a queue length of 10 is specified here for the topic
+    motor_7_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_7", 10);
+    // Create a timer that will trigger calls to the method motor_7_callback
+    // every 200ms
+    timer_motor_7 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_7_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_8"
+    // a queue length of 10 is specified here for the topic
+    motor_8_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_8", 10);
+    // Create a timer that will trigger calls to the method motor_8_callback
+    // every 200ms
+    timer_motor_8 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_8_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_9"
+    // a queue length of 10 is specified here for the topic
+    motor_9_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_9", 10);
+    // Create a timer that will trigger calls to the method motor_9_callback
+    // every 200ms
+    timer_motor_9 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_9_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_10"
+    // a queue length of 10 is specified here for the topic
+    motor_10_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_10", 10);
+    // Create a timer that will trigger calls to the method motor_10_callback
+    // every 200ms
+    timer_motor_10 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_10_callback, this));
+
+    // Create the instance of the publisher that will publish messages
+    // of type unitree_ros2_cpp/msg/MotorState to the topic "legged_data/actuators/motor_11"
+    // a queue length of 10 is specified here for the topic
+    motor_11_publisher = this->create_publisher<unitree_ros2_cpp::msg::MotorState>("legged_data/actuators/motor_11", 10);
+    // Create a timer that will trigger calls to the method motor_11_callback
+    // every 200ms
+    timer_motor_11 = this->create_wall_timer(
+        200ms, std::bind(&LeggedDataRX::motor_11_callback, this));
+      }
+
+
+// topic Callbacks
+private:
+  /*
+   * BMS Data publisher
+   * Takes bms data and updates the msg with latest battery sensor data
+   * WARNING: Batterys will require to be on compatable firmware versions to the robot for data.
+   */
+  void bms_callback()
+  {
+    // Create an instance of the BmsState message type
+    auto message = unitree_ros2_cpp::msg::BmsState();
+
+    udpLegged.UDPSend();
+    udpLegged.UDPRecv(); // Fetch the latest state
+
+    // Convert UDP_Raw to BmsState
+    message.soc = udpLegged.state.bms.SOC;               // Battery %
+    message.current = udpLegged.state.bms.current;       // current in milliamp
+    message.cell_vol = udpLegged.state.bms.cell_vol;     // cell voltage in array[10]
+    message.version_h = udpLegged.state.bms.version_h;   // Battery firmware version
+    message.bms_status = udpLegged.state.bms.bms_status; // Battery status
+    message.cycle = udpLegged.state.bms.cycle;           // The current number of cycles of the battery
+    message.bq_ntc = udpLegged.state.bms.BQ_NTC;         // Temp output in degrees C
+    message.mcu_ntc = udpLegged.state.bms.MCU_NTC;       // Temp output in degrees C
+
+    // Check if the battery is reporting data
+    // if the battery SOC was ever actually at 0, the robot would be off & not boot in the first place
+    if (message.soc == 0)
+    {
+      // If no battery data is detected, display error warning
+      RCLCPP_WARN(this->get_logger(), "WARNING: Battery Management System \n Data: OutOfExpectedBounds: Please ensure a healthy battery is installed OR of a compatable firmware");
+    }
+
+    // publish the message created above to the topic /legged_data/sensors/bms
+    bms_publisher->publish(message);
+  }
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_bms;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::BmsState>::SharedPtr bms_publisher;
+
+
+
+  /*
+   * FootForce Data publisher
+   * Takes HighState data and updates the msg with latest foot force sensor data
+   */
+  void footForce_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::HighState();
+
+    message.foot_force = udpLegged.state.footForce;
+    // message.foot_force_est = udpLegged.state.footForceEst; // Disabled as was showing 0 
+
+    // publish the message created above to the topic /legged_data/sensors/foot_force
+    foot_force_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_foot_force;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr foot_force_publisher;
+
+
+
+  /*
+   * IMU Data publisher
+   * Takes IMU data and updates the msg with latest imu data
+   */
+  void imu_callback() // when under accelerated motion, the attitude of the robot calculated by IMU will drift.
+  {
+    // Create an instance of the IMU message type
+    auto message = sensor_msgs::msg::Imu();
+
+    // geometry_msgs/Quaternion orientation
+    message.orientation.w = udpLegged.state.imu.quaternion[0];
+    message.orientation.x = udpLegged.state.imu.quaternion[1];
+    message.orientation.y = udpLegged.state.imu.quaternion[2];
+    message.orientation.z = udpLegged.state.imu.quaternion[3];
+
+    // geometry_msgs/Vector3 angular_velocity
+    message.angular_velocity.x = udpLegged.state.imu.gyroscope[0];
+    message.angular_velocity.y = udpLegged.state.imu.gyroscope[1];
+    message.angular_velocity.z = udpLegged.state.imu.gyroscope[2];
+
+    // geometry_msgs/Vector3 linear_acceleration
+    message.linear_acceleration.x = udpLegged.state.imu.accelerometer[0];
+    message.linear_acceleration.y = udpLegged.state.imu.accelerometer[1];
+    message.linear_acceleration.z = udpLegged.state.imu.accelerometer[2];
+
+    // Not in use by sensor_msgs/Imu
+    // message.rpy = udpLegged.state.imu.rpy;
+    // message.temperature = udpLegged.state.imu.temperature;
+
+
+    // publish the message created above to the topic /legged_data/sensors/imu
+    imu_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_imu;
+  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_publisher;
+
+
+
+  /*
+   * Mode Data publisher
+   * Takes HighState data and updates the msg with latest mode data
+   */
+  void mode_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::HighState();
+
+
+    // Set latest known mode to msg
+    message.mode = udpLegged.state.mode;
+
+
+    // publish the message created above to the topic /legged_data/status/mode
+    mode_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_mode;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr mode_publisher;
+
+
+
+  /*
+   * Temprature Data publisher
+   * Takes IMU temp data and updates the msg with latest temprature data
+   */
+  void temp_callback()
+  {
+    // Create an instance of the Temperature message type
+    auto message = sensor_msgs::msg::Temperature();
+
+
+    // Set latest to msg
+    message.temperature = udpLegged.state.imu.temperature;
+
+    // publish the message created above to the topic /legged_data/sensors/system_temperature
+    temp_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_temp;
+  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_publisher;
+
+  
+
+  /*
+   * Odom Data publisher
+   * Takes HighState velocity data and updates the msg with latest odom data
+   */
+  void odom_callback()
+  {
+    // Create an instance of the Odometry message type
+    auto message = nav_msgs::msg::Odometry();
+
+
+    // Set latest to msg
+
+    //header
+    message.header.frame_id = "odom";
+    message.child_frame_id = "base_link";
+    message.header.stamp = get_clock()->now(); // set time of data capture
+    
+
+
+    //geometry_msgs/TwistWithCovariance twist
+    message.twist.twist.linear.x = udpLegged.state.velocity[0];
+    message.twist.twist.linear.y = udpLegged.state.velocity[1];
+    message.twist.twist.linear.z = udpLegged.state.velocity[2];
+
+    message.twist.twist.angular.z = udpLegged.state.yawSpeed;
+
+    //geometry_msgs/PoseWithCovariance pose
+    message.pose.pose.orientation.w = udpLegged.state.imu.quaternion[0];
+    message.pose.pose.orientation.x = udpLegged.state.imu.quaternion[1];
+    message.pose.pose.orientation.y = udpLegged.state.imu.quaternion[2];
+    message.pose.pose.orientation.z = udpLegged.state.imu.quaternion[3];
+
+    message.pose.pose.position.x = udpLegged.state.position[0];
+    message.pose.pose.position.y = udpLegged.state.position[1];
+    message.pose.pose.position.z = udpLegged.state.position[2];
+
+    // publish the message created above to the topic /odom
+    odom_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_odom;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher;
+
+
+
+  /*
+   * Gait_type Data publisher
+   * Takes HighState data and updates the msg with latest gait_type data
+   */
+  void gait_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::HighState();
+
+
+    // Set latest known mode to msg
+    message.gait_type = udpLegged.state.gaitType;
+
+
+    // publish the message created above to the topic /legged_data/status/gait_type
+    mode_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_gait;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr gait_publisher;
+
+
+
+  /*
+   * About_Go1 Data publisher
+   * Takes HighState data and updates the msg with latest about data
+   */
+  void about_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::HighState();
+
+
+    // Set latest known mode to msg
+    message.sn = udpLegged.state.SN;
+    message.version = udpLegged.state.version;
+    message.bandwidth = udpLegged.state.bandWidth;
+
+
+    // publish the message created above to the topic /legged_data/status/gait_type
+    mode_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_about;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr about_publisher;
+
+
+
+   /*
+   * foot_raise_height Data publisher
+   * Takes HighState data and updates the msg with latest about data
+   */
+  void foot_raise_height_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::HighState();
+
+
+    // Set latest known mode to msg
+    message.foot_raise_height = udpLegged.state.footRaiseHeight;
+
+    // publish the message created above to the topic /legged_data/status/gait_type
+    foot_raise_height_publisher->publish(message);
+  }
+
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_foot_raise_height;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr foot_raise_height_publisher;
+
+
+  /*
+  * Motor 0 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 0 data
+  */
+  void motor_0_callback()
+  {
+    // Create an instance of the HighState message type
+    auto message = unitree_ros2_cpp::msg::MotorState();
+
+    // Set latest known motor status to msg
+    message.mode = udpLegged.state.motorState[0].mode;       
+    message.q = udpLegged.state.motorState[0].q;
+    message.dq = udpLegged.state.motorState[0].dq;              
+    message.ddq = udpLegged.state.motorState[0].ddq;
+    message.tau_est = udpLegged.state.motorState[0].tauEst;
+    message.q_raw = udpLegged.state.motorState[0].q_raw;
+    message.dq_raw = udpLegged.state.motorState[0].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[0].ddq_raw;
+    message.temperature = udpLegged.state.motorState[0].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_0
+    motor_0_publisher->publish(message);
+  }
+  // Declaration of private fields used for timer, publisher and counter
+  rclcpp::TimerBase::SharedPtr timer_motor_0;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_0_publisher;
+
+  /*
+  * Motor 1 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 1 data
+  */
+  void motor_1_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[1].mode;       
+    message.q = udpLegged.state.motorState[1].q;
+    message.dq = udpLegged.state.motorState[1].dq;              
+    message.ddq = udpLegged.state.motorState[1].ddq;
+    message.tau_est = udpLegged.state.motorState[1].tauEst;
+    message.q_raw = udpLegged.state.motorState[1].q_raw;
+    message.dq_raw = udpLegged.state.motorState[1].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[1].ddq_raw;
+    message.temperature = udpLegged.state.motorState[1].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_1
+    motor_1_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_1;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_1_publisher;
+
+  /*
+  * Motor 2 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 2 data
+  */
+  void motor_2_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[2].mode;       
+    message.q = udpLegged.state.motorState[2].q;
+    message.dq = udpLegged.state.motorState[2].dq;              
+    message.ddq = udpLegged.state.motorState[2].ddq;
+    message.tau_est = udpLegged.state.motorState[2].tauEst;
+    message.q_raw = udpLegged.state.motorState[2].q_raw;
+    message.dq_raw = udpLegged.state.motorState[2].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[2].ddq_raw;
+    message.temperature = udpLegged.state.motorState[2].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_2
+    motor_2_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_2;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_2_publisher;
+
+  /*
+  * Motor 3 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 3 data
+  */
+  void motor_3_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[3].mode;       
+    message.q = udpLegged.state.motorState[3].q;
+    message.dq = udpLegged.state.motorState[3].dq;              
+    message.ddq = udpLegged.state.motorState[3].ddq;
+    message.tau_est = udpLegged.state.motorState[3].tauEst;
+    message.q_raw = udpLegged.state.motorState[3].q_raw;
+    message.dq_raw = udpLegged.state.motorState[3].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[3].ddq_raw;
+    message.temperature = udpLegged.state.motorState[3].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_3
+    motor_3_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_3;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_3_publisher;
+
+  /*
+  * Motor 4 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 4 data
+  */
+  void motor_4_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[4].mode;       
+    message.q = udpLegged.state.motorState[4].q;
+    message.dq = udpLegged.state.motorState[4].dq;              
+    message.ddq = udpLegged.state.motorState[4].ddq;
+    message.tau_est = udpLegged.state.motorState[4].tauEst;
+    message.q_raw = udpLegged.state.motorState[4].q_raw;
+    message.dq_raw = udpLegged.state.motorState[4].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[4].ddq_raw;
+    message.temperature = udpLegged.state.motorState[4].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_4
+    motor_4_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_4;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_4_publisher;
+
+  /*
+  * Motor 5 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 5 data
+  */
+  void motor_5_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[5].mode;       
+    message.q = udpLegged.state.motorState[5].q;
+    message.dq = udpLegged.state.motorState[5].dq;              
+    message.ddq = udpLegged.state.motorState[5].ddq;
+    message.tau_est = udpLegged.state.motorState[5].tauEst;
+    message.q_raw = udpLegged.state.motorState[5].q_raw;
+    message.dq_raw = udpLegged.state.motorState[5].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[5].ddq_raw;
+    message.temperature = udpLegged.state.motorState[5].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_5
+    motor_5_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_5;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_5_publisher;
+
+  /*
+  * Motor 6 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 6 data
+  */
+  void motor_6_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[6].mode;       
+    message.q = udpLegged.state.motorState[6].q;
+    message.dq = udpLegged.state.motorState[6].dq;              
+    message.ddq = udpLegged.state.motorState[6].ddq;
+    message.tau_est = udpLegged.state.motorState[6].tauEst;
+    message.q_raw = udpLegged.state.motorState[6].q_raw;
+    message.dq_raw = udpLegged.state.motorState[6].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[6].ddq_raw;
+    message.temperature = udpLegged.state.motorState[6].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_6
+    motor_6_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_6;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_6_publisher;
+
+  /*
+  * Motor 7 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 7 data
+  */
+  void motor_7_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[7].mode;       
+    message.q = udpLegged.state.motorState[7].q;
+    message.dq = udpLegged.state.motorState[7].dq;              
+    message.ddq = udpLegged.state.motorState[7].ddq;
+    message.tau_est = udpLegged.state.motorState[7].tauEst;
+    message.q_raw = udpLegged.state.motorState[7].q_raw;
+    message.dq_raw = udpLegged.state.motorState[7].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[7].ddq_raw;
+    message.temperature = udpLegged.state.motorState[7].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_7
+    motor_7_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_7;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_7_publisher;
+
+  /*
+  * Motor 8 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 8 data
+  */
+  void motor_8_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[8].mode;       
+    message.q = udpLegged.state.motorState[8].q;
+    message.dq = udpLegged.state.motorState[8].dq;              
+    message.ddq = udpLegged.state.motorState[8].ddq;
+    message.tau_est = udpLegged.state.motorState[8].tauEst;
+    message.q_raw = udpLegged.state.motorState[8].q_raw;
+    message.dq_raw = udpLegged.state.motorState[8].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[8].ddq_raw;
+    message.temperature = udpLegged.state.motorState[8].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_8
+    motor_8_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_8;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_8_publisher;
+
+  /*
+  * Motor 9 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 9 data
+  */
+  void motor_9_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[9].mode;       
+    message.q = udpLegged.state.motorState[9].q;
+    message.dq = udpLegged.state.motorState[9].dq;              
+    message.ddq = udpLegged.state.motorState[9].ddq;
+    message.tau_est = udpLegged.state.motorState[9].tauEst;
+    message.q_raw = udpLegged.state.motorState[9].q_raw;
+    message.dq_raw = udpLegged.state.motorState[9].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[9].ddq_raw;
+    message.temperature = udpLegged.state.motorState[9].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_9
+    motor_9_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_9;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_9_publisher;
+
+  /*
+  * Motor 10 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 10 data
+  */
+  void motor_10_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[10].mode;       
+    message.q = udpLegged.state.motorState[10].q;
+    message.dq = udpLegged.state.motorState[10].dq;              
+    message.ddq = udpLegged.state.motorState[10].ddq;
+    message.tau_est = udpLegged.state.motorState[10].tauEst;
+    message.q_raw = udpLegged.state.motorState[10].q_raw;
+    message.dq_raw = udpLegged.state.motorState[10].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[10].ddq_raw;
+    message.temperature = udpLegged.state.motorState[10].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_10
+    motor_10_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_10;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_10_publisher;
+
+  /*
+  * Motor 11 status Data publisher
+  * Takes MotorStatus data and updates the msg with latest Motor 11 data
+  */
+  void motor_11_callback()
+  {
+    auto message = unitree_ros2_cpp::msg::MotorState();
+    message.mode = udpLegged.state.motorState[11].mode;       
+    message.q = udpLegged.state.motorState[11].q;
+    message.dq = udpLegged.state.motorState[11].dq;              
+    message.ddq = udpLegged.state.motorState[11].ddq;
+    message.tau_est = udpLegged.state.motorState[11].tauEst;
+    message.q_raw = udpLegged.state.motorState[11].q_raw;
+    message.dq_raw = udpLegged.state.motorState[11].dq_raw;
+    message.ddq_raw = udpLegged.state.motorState[11].ddq_raw;
+    message.temperature = udpLegged.state.motorState[11].temperature;
+
+    // publish the message created above to the topic /legged_data/actuators/motor_11
+    motor_11_publisher->publish(message);
+  }
+  rclcpp::TimerBase::SharedPtr timer_motor_11;
+  rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr motor_11_publisher;
+
+
+  size_t count_;
+};
+
+
+
+
+
+
+
+
+
+
+
+// This is a break in the code to allow for easy navigation
+
+
+
+
+
+
+
+
+
+
+
+
+// Declaring a new class as a subclass of the ROS 2 Node class
+class LeggedControl : public rclcpp::Node
+{
+public:
+  // Constructor specifying node name for superclass
+  LeggedControl()
+      : Node("LeggedDataTX")
+  {
+
+    // Create the instance of the twist subscriber that will receive messages
+    // of type geometry_msgs/msg/Twist published to the topic "/cmd_vel"
+    // a queue length of 10 is specified here and a reference is given
+    subscription_twist = this->create_subscription<geometry_msgs::msg::Twist>(
+        "cmd_vel", 10, std::bind(&LeggedControl::twist_callback, this, std::placeholders::_1));
+
+
+    // Create the instance of the mode subscriber that will receive messages
+    // of type unitree_ros2_cpp/msg/HighCmd published to the topic "/cmd_mode"
+    // a queue length of 10 is specified here and a reference is given
+    subscription_mode = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+        "cmd_mode", 10, std::bind(&LeggedControl::cmdMode_callback, this, std::placeholders::_1));
+
+
+    // Create the instance of the cmd_pos subscriber that will receive messages
+    // of type geometry_msgs/msg/Twist published to the topic "/cmd_mode"
+    // Only in Linear X & Y plane
+    // a queue length of 10 is specified here and a reference is given
+    subscription_twist_pos = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+      "cmd_pos", 10, std::bind(&LeggedControl::cmdPos_callback, this, std::placeholders::_1));
+    
+
+
+    // Create the instance of the cmd_foot_raise_height subscriber that will receive messages
+    // of type unitree_ros2_cpp/msg/HighCmd published to the topic "/cmd_foot_raise_height"
+    // a queue length of 10 is specified here and a reference is given
+    subscription_foot_raise_height = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+      "cmd_foot_raise_height", 10, std::bind(&LeggedControl::cmdWalkHeight_callback, this, std::placeholders::_1));
+
+      // Create the instance of the cmd_euler subscriber that will receive messages
+    // of type unitree_ros2_cpp/msg/HighCmd published to the topic "/cmd_euler"
+    // a queue length of 10 is specified here and a reference is given
+    subscription_euler = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+      "cmd_euler", 10, std::bind(&LeggedControl::cmdEuler_callback, this, std::placeholders::_1));
+
+
+/*
+
+CmdMotor feature currently disabled to do risks of damaging the robot. To be dicussed with Tomos Fearn
+
+*/
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_0"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_0 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_0", 10, std::bind(&LeggedControl::cmdMotor_0_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_1"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_1 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_1", 10, std::bind(&LeggedControl::cmdMotor_1_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_2"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_2 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_2", 10, std::bind(&LeggedControl::cmdMotor_2_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_3"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_3 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_3", 10, std::bind(&LeggedControl::cmdMotor_3_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_4"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_4 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_4", 10, std::bind(&LeggedControl::cmdMotor_4_callback, this, std::placeholders::_1));
+
+      
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_5"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_5 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_5", 10, std::bind(&LeggedControl::cmdMotor_5_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_6"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_6 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_6", 10, std::bind(&LeggedControl::cmdMotor_6_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_7"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_7 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_7", 10, std::bind(&LeggedControl::cmdMotor_7_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_8"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_8 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_8", 10, std::bind(&LeggedControl::cmdMotor_8_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_9"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_9 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_9", 10, std::bind(&LeggedControl::cmdMotor_9_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_10"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_10 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_10", 10, std::bind(&LeggedControl::cmdMotor_10_callback, this, std::placeholders::_1));
+
+
+    // // Create the instance of the cmd_actuators subscriber that will receive messages
+    // // of type unitree_ros2_cpp/msg/MotorCmd published to the topic "/cmd_actuators/motor_11"
+    // // a queue length of 10 is specified here and a reference is given
+    // subscription_motor_11 = this->create_subscription<unitree_ros2_cpp::msg::MotorCmd>(
+    //   "cmd_actuators/motor_11", 10, std::bind(&LeggedControl::cmdMotor_11_callback, this, std::placeholders::_1));
+
+  }
+
+private:
+  /*
+   * twist Data subscriber
+   * Takes twist msg data and sends it via UDP to the robot
+   */
+  void twist_callback(const geometry_msgs::msg::Twist &msg)
+  {
+    // Logger used to print details of the message received (printed to console).
+    RCLCPP_INFO(this->get_logger(), "I heard: msg.data=%f  and  %f", msg.linear.x, msg.angular.z);
+    udpLegged.cmd.velocity[0] = msg.linear.x; // Forward / backward motion
+    udpLegged.cmd.velocity[1] = msg.linear.y; // Left / right motion
+    udpLegged.cmd.bodyHeight = msg.linear.z; // Vertical / up & down
+
+    
+
+    udpLegged.cmd.yawSpeed = msg.angular.z; // Rotation in rad/s
+
+
+    udpLegged.udp.SetSend(udpLegged.cmd);
+    udpLegged.UDPSend();
+  }
+  // Declaration of private fields used for subscriber
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_twist;
+
+
+
+  /*
+   * mode Data subscriber
+   * Takes HighCmd msg data and sends it via UDP to the robot
+   */
+  void cmdMode_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
+  {
+
+    udpLegged.cmd.mode = msg.mode;
+
+    udpLegged.udp.SetSend(udpLegged.cmd);
+    udpLegged.UDPSend();
+  }
+  // Declaration of private fields used for subscriber
+  rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr subscription_mode;
+
+
+
+  /*
+   * cmdPos Data subscriber
+   * Takes HighCmd msg data and sends it via UDP to the robot
+   */
+  void cmdPos_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
+  {
+
+    udpLegged.cmd.position[0] = msg.position[0];
+    udpLegged.cmd.position[1] = msg.position[1];
+
+    udpLegged.udp.SetSend(udpLegged.cmd);
+    udpLegged.UDPSend();
+  }
+  // Declaration of private fields used for subscriber
+  rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr subscription_twist_pos;
+
+
+
+  /*
+   * Walk height Data subscriber
+   * Takes HighCmd msg data and sends it via UDP to the robot
+   */
+  void cmdWalkHeight_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
+  {
+
+    udpLegged.cmd.footRaiseHeight = msg.foot_raise_height;
+
+    udpLegged.udp.SetSend(udpLegged.cmd);
+    udpLegged.UDPSend();
+  }
+  // Declaration of private fields used for subscriber
+  rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr subscription_foot_raise_height;
+
+
+  /*
+   * cmdEuler Data subscriber
+   * Takes HighCmd msg data and sends it via UDP to the robot
+   */
+  void cmdEuler_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
+  {
+
+    udpLegged.cmd.euler[0] = msg.euler[0];
+    udpLegged.cmd.euler[1] = msg.euler[1];
+    udpLegged.cmd.euler[2] = msg.euler[2];
+
+    udpLegged.udp.SetSend(udpLegged.cmd);
+    udpLegged.UDPSend();
+  }
+  // Declaration of private fields used for subscriber
+  rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr subscription_euler;
+
+
+/*
+
+CmdMotor feature currently disabled to do risks of damaging the robot. To be dicussed with Tomos Fearn
+
+*/
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_0_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[0].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[0].q = msg.q;
+  //   udpLegged.cmd.motorCmd[0].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[0].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[0].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[0].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_0;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_1_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[1].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[1].q = msg.q;
+  //   udpLegged.cmd.motorCmd[1].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[1].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[1].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[1].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_1;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_2_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[2].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[2].q = msg.q;
+  //   udpLegged.cmd.motorCmd[2].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[2].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[2].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[2].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_2;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_3_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[3].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[3].q = msg.q;
+  //   udpLegged.cmd.motorCmd[3].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[3].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[3].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[3].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_3;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_4_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[4].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[4].q = msg.q;
+  //   udpLegged.cmd.motorCmd[4].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[4].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[4].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[4].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_4;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_5_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[5].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[5].q = msg.q;
+  //   udpLegged.cmd.motorCmd[5].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[5].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[5].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[5].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_5;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_6_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[6].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[6].q = msg.q;
+  //   udpLegged.cmd.motorCmd[6].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[6].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[6].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[6].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_6;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_7_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[7].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[7].q = msg.q;
+  //   udpLegged.cmd.motorCmd[7].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[7].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[7].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[7].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_7;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_8_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[8].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[8].q = msg.q;
+  //   udpLegged.cmd.motorCmd[8].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[8].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[8].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[8].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_8;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_9_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[9].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[9].q = msg.q;
+  //   udpLegged.cmd.motorCmd[9].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[9].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[9].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[9].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_9;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_10_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd.motorCmd[10].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[10].q = msg.q;
+  //   udpLegged.cmd.motorCmd[10].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[10].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[10].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[10].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_10;
+
+
+
+  // /*
+  // * MotorCmd Data subscriber
+  // * Takes MotorCmd msg data and sends it via UDP to the robot
+  // */
+  // void cmdMotor_11_callback(const unitree_ros2_cpp::msg::MotorCmd &msg)
+  // {
+  //   udpLegged.cmd. .motorCmd[11].mode = msg.mode;
+  //   udpLegged.cmd.motorCmd[11].q = msg.q;
+  //   udpLegged.cmd.motorCmd[11].dq = msg.dq;
+  //   udpLegged.cmd.motorCmd[11].tau = msg.tau;
+  //   udpLegged.cmd.motorCmd[11].kp = msg.kp;
+  //   udpLegged.cmd.motorCmd[11].kd = msg.kd;
+
+  //   udpLegged.udp.SetSend(udpLegged.cmd);
+  //   udpLegged.UDPSend();
+  // }
+  // // Declaration of private fields used for subscriber
+  // rclcpp::Subscription<unitree_ros2_cpp::msg::MotorCmd>::SharedPtr subscription_motor_11;
+
+};
+
+// Main method defining entry point for program
+int main(int argc, char *argv[])
+{
+  // Initialise ROS 2 for this node
+  rclcpp::init(argc, argv);
+
+  /*
+   * Start node as multithread process
+   * Prevents any single callback blocking another. (Helps improve performance)
+   * Source: https://docs.ros.org/en/humble/Concepts/Intermediate/About-Executors.html
+   */
+  rclcpp::executors::MultiThreadedExecutor executor;
+  auto leggedDataNode = std::make_shared<LeggedDataRX>();
+  auto leggedControlNode = std::make_shared<LeggedControl>();
+  auto udpServer = std::make_shared<UDPLoopService>();
+
+  executor.add_node(udpServer);
+  executor.add_node(leggedDataNode);
+  executor.add_node(leggedControlNode);
+  executor.spin();
+
+  // When the node is terminated, shut down ROS 2 for this node
+  rclcpp::shutdown();
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/example/example_joystick.cpp">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include "unitree_legged_sdk/joystick.h"
+#include <math.h>
+#include <iostream>
+#include <unistd.h>
+
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.123.10", 8007)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPSend();
+  void UDPRecv();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  LowCmd cmd = {0};
+  LowState state = {0};
+  xRockerBtnDataStruct _keyData;
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+void Custom::RobotControl()
+{
+  motiontime++;
+  udp.GetRecv(state);
+
+  memcpy(&_keyData, &state.wirelessRemote[0], 40);
+
+  if ((int)_keyData.btn.components.A == 1)
+  {
+    std::cout << "The key A is pressed, and the value of lx is " << _keyData.lx << std::endl;
+  }
+
+  safe.PowerProtect(cmd, state, 1);
+  udp.SetSend(cmd);
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to LOW-level." << std::endl
+            << "WARNING: Make sure the robot is hung up." << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(LOWLEVEL);
+  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+
+  loop_udpSend.start();
+  loop_udpRecv.start();
+  loop_control.start();
+
+  while (1)
+  {
+    sleep(10);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/example/example_position.cpp">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include <math.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdint.h>
+
+using namespace std;
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.123.10", 8007)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPRecv();
+  void UDPSend();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  LowCmd cmd = {0};
+  LowState state = {0};
+  float qInit[3] = {0};
+  float qDes[3] = {0};
+  float sin_mid_q[3] = {0.0, 1.2, -2.0};
+  float Kp[3] = {0};
+  float Kd[3] = {0};
+  double time_consume = 0;
+  int rate_count = 0;
+  int sin_count = 0;
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+double jointLinearInterpolation(double initPos, double targetPos, double rate)
+{
+  double p;
+  rate = std::min(std::max(rate, 0.0), 1.0);
+  p = initPos * (1 - rate) + targetPos * rate;
+  return p;
+}
+
+void Custom::RobotControl()
+{
+  motiontime++;
+  udp.GetRecv(state);
+  printf("%d  %f  %f\n", motiontime, state.motorState[FR_1].q, state.motorState[FR_1].dq);
+
+  // gravity compensation
+  cmd.motorCmd[FR_0].tau = -0.65f;
+  cmd.motorCmd[FL_0].tau = +0.65f;
+  cmd.motorCmd[RR_0].tau = -0.65f;
+  cmd.motorCmd[RL_0].tau = +0.65f;
+
+  // if( motiontime >= 100){
+  if (motiontime >= 0)
+  {
+    // first, get record initial position
+    // if( motiontime >= 100 && motiontime < 500){
+    if (motiontime >= 0 && motiontime < 10)
+    {
+      qInit[0] = state.motorState[FR_0].q;
+      qInit[1] = state.motorState[FR_1].q;
+      qInit[2] = state.motorState[FR_2].q;
+    }
+    // second, move to the origin point of a sine movement with Kp Kd
+    // if( motiontime >= 500 && motiontime < 1500){
+    if (motiontime >= 10 && motiontime < 400)
+    {
+      rate_count++;
+      double rate = rate_count / 200.0; // needs count to 200
+      Kp[0] = 5.0;
+      Kp[1] = 5.0;
+      Kp[2] = 5.0;
+      Kd[0] = 1.0;
+      Kd[1] = 1.0;
+      Kd[2] = 1.0;
+      // Kp[0] = 20.0; Kp[1] = 20.0; Kp[2] = 20.0;
+      // Kd[0] = 2.0; Kd[1] = 2.0; Kd[2] = 2.0;
+
+      qDes[0] = jointLinearInterpolation(qInit[0], sin_mid_q[0], rate);
+      qDes[1] = jointLinearInterpolation(qInit[1], sin_mid_q[1], rate);
+      qDes[2] = jointLinearInterpolation(qInit[2], sin_mid_q[2], rate);
+    }
+    double sin_joint1, sin_joint2;
+    if (motiontime >= 400)
+    {
+      sin_count++;
+      sin_joint1 = 0.6 * sin(3 * M_PI * sin_count / 1000.0);
+      sin_joint2 = -0.6 * sin(1.8 * M_PI * sin_count / 1000.0);
+      qDes[0] = sin_mid_q[0];
+      qDes[1] = sin_mid_q[1];
+      qDes[2] = sin_mid_q[2] + sin_joint2;
+    }
+
+    cmd.motorCmd[FR_0].q = qDes[0];
+    cmd.motorCmd[FR_0].dq = 0;
+    cmd.motorCmd[FR_0].Kp = Kp[0];
+    cmd.motorCmd[FR_0].Kd = Kd[0];
+    cmd.motorCmd[FR_0].tau = -0.65f;
+
+    cmd.motorCmd[FR_1].q = qDes[1];
+    cmd.motorCmd[FR_1].dq = 0;
+    cmd.motorCmd[FR_1].Kp = Kp[1];
+    cmd.motorCmd[FR_1].Kd = Kd[1];
+    cmd.motorCmd[FR_1].tau = 0.0f;
+
+    cmd.motorCmd[FR_2].q = qDes[2];
+    cmd.motorCmd[FR_2].dq = 0;
+    cmd.motorCmd[FR_2].Kp = Kp[2];
+    cmd.motorCmd[FR_2].Kd = Kd[2];
+    cmd.motorCmd[FR_2].tau = 0.0f;
+  }
+
+  if (motiontime > 10)
+  {
+    safe.PositionLimit(cmd);
+    int res1 = safe.PowerProtect(cmd, state, 1);
+    // You can uncomment it for position protection
+    // int res2 = safe.PositionProtect(cmd, state, 10);
+    if (res1 < 0)
+      exit(-1);
+  }
+
+  udp.SetSend(cmd);
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to LOW-level." << std::endl
+            << "WARNING: Make sure the robot is hung up." << std::endl
+            << "NOTE: The robot also needs to be set to LOW-level mode, otherwise it will make strange noises and this example will not run successfully! " << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(LOWLEVEL);
+  // InitEnvironment();
+  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+
+  loop_udpSend.start();
+  loop_udpRecv.start();
+  loop_control.start();
+
+  while (1)
+  {
+    sleep(10);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/example/example_torque.cpp">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include <math.h>
+#include <iostream>
+#include <unistd.h>
+
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.123.10", 8007)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPSend();
+  void UDPRecv();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  LowCmd cmd = {0};
+  LowState state = {0};
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+void Custom::RobotControl()
+{
+  motiontime++;
+  udp.GetRecv(state);
+  // gravity compensation
+  cmd.motorCmd[FR_0].tau = -0.65f;
+  cmd.motorCmd[FL_0].tau = +0.65f;
+  cmd.motorCmd[RR_0].tau = -0.65f;
+  cmd.motorCmd[RL_0].tau = +0.65f;
+
+  if (motiontime >= 500)
+  {
+    float torque = (0 - state.motorState[FR_1].q) * 10.0f + (0 - state.motorState[FR_1].dq) * 1.0f;
+    if (torque > 5.0f)
+      torque = 5.0f;
+    if (torque < -5.0f)
+      torque = -5.0f;
+
+    cmd.motorCmd[FR_1].q = PosStopF;
+    cmd.motorCmd[FR_1].dq = VelStopF;
+    cmd.motorCmd[FR_1].Kp = 0;
+    cmd.motorCmd[FR_1].Kd = 0;
+    cmd.motorCmd[FR_1].tau = torque;
+  }
+  int res = safe.PowerProtect(cmd, state, 1);
+  if (res < 0)
+    exit(-1);
+
+  udp.SetSend(cmd);
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to LOW-level." << std::endl
+            << "WARNING: Make sure the robot is hung up." << std::endl
+            << "NOTE: The robot also needs to be set to LOW-level mode, otherwise it will make strange noises and this example will not run successfully! " << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(LOWLEVEL);
+  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+
+  loop_udpSend.start();
+  loop_udpRecv.start();
+  loop_control.start();
+
+  while (1)
+  {
+    sleep(10);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/example/example_velocity.cpp">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include <math.h>
+#include <iostream>
+
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.123.10", 8007)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPRecv();
+  void UDPSend();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  LowCmd cmd = {0};
+  LowState state = {0};
+  int Tpi = 0;
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+void Custom::RobotControl()
+{
+  motiontime++;
+  udp.GetRecv(state);
+
+  // gravity compensation
+  cmd.motorCmd[FR_0].tau = -0.65f;
+  cmd.motorCmd[FL_0].tau = +0.65f;
+  cmd.motorCmd[RR_0].tau = -0.65f;
+  cmd.motorCmd[RL_0].tau = +0.65f;
+
+  if (motiontime >= 500)
+  {
+    float speed = 2 * sin(3 * M_PI * Tpi / 1500.0);
+
+    cmd.motorCmd[FR_1].q = PosStopF;
+    cmd.motorCmd[FR_1].dq = speed;
+    cmd.motorCmd[FR_1].Kp = 0;
+    cmd.motorCmd[FR_1].Kd = 4;
+    cmd.motorCmd[FR_1].tau = 0.0f;
+    Tpi++;
+  }
+
+  if (motiontime > 10)
+  {
+    int res1 = safe.PowerProtect(cmd, state, 1);
+    // You can uncomment it for position protection
+    // int res2 = safe.PositionProtect(cmd, state, 10);
+    if (res1 < 0)
+      exit(-1);
+  }
+
+  udp.SetSend(cmd);
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to LOW-level." << std::endl
+            << "WARNING: Make sure the robot is hung up." << std::endl
+            << "NOTE: The robot also needs to be set to LOW-level mode, otherwise it will make strange noises and this example will not run successfully! " << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(LOWLEVEL);
+  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+
+  loop_udpSend.start();
+  loop_udpRecv.start();
+  loop_control.start();
+
+  while (1)
+  {
+    sleep(10);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/example/example_walk.cpp">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include <math.h>
+#include <iostream>
+#include <unistd.h>
+#include <string.h>
+
+using namespace UNITREE_LEGGED_SDK;
+
+class Custom
+{
+public:
+  Custom(uint8_t level) : safe(LeggedType::Go1),
+                          udp(level, 8090, "192.168.123.161", 8082)
+  {
+    udp.InitCmdData(cmd);
+  }
+  void UDPRecv();
+  void UDPSend();
+  void RobotControl();
+
+  Safety safe;
+  UDP udp;
+  HighCmd cmd = {0};
+  HighState state = {0};
+  int motiontime = 0;
+  float dt = 0.002; // 0.001~0.01
+};
+
+void Custom::UDPRecv()
+{
+  udp.Recv();
+}
+
+void Custom::UDPSend()
+{
+  udp.Send();
+}
+
+void Custom::RobotControl()
+{
+  motiontime += 2;
+  udp.GetRecv(state);
+  //   printf("%d   %f\n", motiontime, state.imu.quaternion[2]);
+  cmd.mode = 0; // 0:idle, default stand      1:forced stand     2:walk continuously
+  cmd.gaitType = 0;
+  cmd.speedLevel = 0;
+  cmd.footRaiseHeight = 0;
+  cmd.bodyHeight = 0;
+  cmd.euler[0] = 0;
+  cmd.euler[1] = 0;
+  cmd.euler[2] = 0;
+  cmd.velocity[0] = 0.0f;
+  cmd.velocity[1] = 0.0f;
+  cmd.yawSpeed = 0.0f;
+  cmd.reserve = 0;
+
+  if (motiontime > 0 && motiontime < 1000)
+  {
+    cmd.mode = 1;
+    cmd.euler[0] = -0.3;
+  }
+  if (motiontime > 1000 && motiontime < 2000)
+  {
+    cmd.mode = 1;
+    cmd.euler[0] = 0.3;
+  }
+  if (motiontime > 2000 && motiontime < 3000)
+  {
+    cmd.mode = 1;
+    cmd.euler[1] = -0.2;
+  }
+  if (motiontime > 3000 && motiontime < 4000)
+  {
+    cmd.mode = 1;
+    cmd.euler[1] = 0.2;
+  }
+  if (motiontime > 4000 && motiontime < 5000)
+  {
+    cmd.mode = 1;
+    cmd.euler[2] = -0.2;
+  }
+  if (motiontime > 5000 && motiontime < 6000)
+  {
+    cmd.mode = 1;
+    cmd.euler[2] = 0.2;
+  }
+  if (motiontime > 6000 && motiontime < 7000)
+  {
+    cmd.mode = 1;
+    cmd.bodyHeight = -0.2;
+  }
+  if (motiontime > 7000 && motiontime < 8000)
+  {
+    cmd.mode = 1;
+    cmd.bodyHeight = 0.1;
+  }
+  if (motiontime > 8000 && motiontime < 9000)
+  {
+    cmd.mode = 1;
+    cmd.bodyHeight = 0.0;
+  }
+  if (motiontime > 9000 && motiontime < 11000)
+  {
+    cmd.mode = 5;
+  }
+  if (motiontime > 11000 && motiontime < 13000)
+  {
+    cmd.mode = 7;
+  }
+  if (motiontime > 13000 && motiontime < 15000)
+  {
+    cmd.mode = 6;
+  }
+  if (motiontime > 15000 && motiontime < 16000)
+  {
+    cmd.mode = 0;
+  }
+  if (motiontime > 16000 && motiontime < 20000)
+  {
+    cmd.mode = 2;
+    cmd.gaitType = 2;
+    cmd.velocity[0] = 0.4f;
+    cmd.yawSpeed = 2;
+    cmd.footRaiseHeight = 0.1;
+  }
+  if (motiontime > 20000 && motiontime < 22000)
+  {
+    cmd.mode = 0;
+    cmd.velocity[0] = 0;
+  }
+  if (motiontime > 22000 && motiontime < 26000)
+  {
+    cmd.mode = 2;
+    cmd.gaitType = 1;
+    cmd.velocity[0] = 0.2f;
+    cmd.bodyHeight = 0.1;
+  }
+
+  // straightHand mode usage
+  if (motiontime > 26000 && motiontime < 27000)
+  {
+    cmd.mode = 1;
+  }
+  if (motiontime > 27000 && motiontime < 35000)
+  {
+    cmd.mode = 11;
+  }
+
+  // jumpYaw mode usage
+  if (motiontime > 35000 && motiontime < 36000)
+  {
+    cmd.mode = 1;
+  }
+  if (motiontime > 36000 && motiontime < 37000)
+  {
+    cmd.mode = 10;
+  }
+
+  udp.SetSend(cmd);
+}
+
+int main(void)
+{
+  std::cout << "Communication level is set to HIGH-level." << std::endl
+            << "WARNING: Make sure the robot is standing on the ground." << std::endl
+            << "Press Enter to continue..." << std::endl;
+  std::cin.ignore();
+
+  Custom custom(HIGHLEVEL);
+  LoopFunc loop_control("control_loop", custom.dt, boost::bind(&Custom::RobotControl, &custom));
+  LoopFunc loop_udpSend("udp_send", custom.dt, 3, boost::bind(&Custom::UDPSend, &custom));
+  LoopFunc loop_udpRecv("udp_recv", custom.dt, 3, boost::bind(&Custom::UDPRecv, &custom));
+
+  loop_udpSend.start();
+  loop_udpRecv.start();
+  loop_control.start();
+
+  while (1)
+  {
+    sleep(10);
+  };
+
+  return 0;
+}
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/a1_const.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_A1_H_
+#define _UNITREE_LEGGED_A1_H_
+
+namespace UNITREE_LEGGED_SDK {
+constexpr double a1_Hip_max = 0.802;    // unit:radian ( = 46   degree)
+constexpr double a1_Hip_min = -0.802;   // unit:radian ( = -46  degree)
+constexpr double a1_Thigh_max = 4.19;   // unit:radian ( = 240  degree)
+constexpr double a1_Thigh_min = -1.05;  // unit:radian ( = -60  degree)
+constexpr double a1_Calf_max = -0.916;  // unit:radian ( = -52.5  degree)
+constexpr double a1_Calf_min = -2.7;    // unit:radian ( = -154.5 degree)
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/aliengo_const.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_ALIENGO_H_
+#define _UNITREE_LEGGED_ALIENGO_H_
+
+namespace UNITREE_LEGGED_SDK {
+constexpr double aliengo_Hip_max = 1.047;     // unit:radian ( = 60   degree)
+constexpr double aliengo_Hip_min = -0.873;    // unit:radian ( = -50  degree)
+constexpr double aliengo_Thigh_max = 3.927;   // unit:radian ( = 225  degree)
+constexpr double aliengo_Thigh_min = -0.524;  // unit:radian ( = -30  degree)
+constexpr double aliengo_Calf_max = -0.611;   // unit:radian ( = -35  degree)
+constexpr double aliengo_Calf_min = -2.775;   // unit:radian ( = -159 degree)
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/b1_const.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef B1_CONST_H
+#define B1_CONST_H
+namespace UNITREE_LEGGED_SDK {
+constexpr double b1_Hip_max = 0.75;
+constexpr double b1_Hip_min = -0.75;
+constexpr double b1_Thigh_max = 3.5;
+constexpr double b1_Thigh_min = -1.0;
+constexpr double b1_Calf_max = -0.6;
+constexpr double b1_Calf_min = -2.6;
+}  // namespace UNITREE_LEGGED_SDK
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/comm.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_COMM_H_
+#define _UNITREE_LEGGED_COMM_H_
+
+#include <stdint.h>
+#include <array>
+
+namespace UNITREE_LEGGED_SDK
+{
+
+  constexpr int HIGHLEVEL = 0xee;
+  constexpr int LOWLEVEL = 0xff;
+  constexpr int TRIGERLEVEL = 0xf0;
+  constexpr double PosStopF = (2.146E+9f);
+  constexpr double VelStopF = (16000.0f);
+  extern const int HIGH_CMD_LENGTH;   // sizeof(HighCmd)
+  extern const int HIGH_STATE_LENGTH; // sizeof(HighState)
+  extern const int LOW_CMD_LENGTH;    // shorter than sizeof(LowCmd),   bytes compressed LowCmd length
+  extern const int LOW_STATE_LENGTH;  // shorter than sizeof(LowState), bytes compressed LowState length
+
+#pragma pack(1)
+
+  typedef struct
+  {
+    uint8_t off; // set 0xA5 to turn off the battery, please try it under the premise of ensuring safety
+    std::array<uint8_t, 3> reserve;
+  } BmsCmd;
+
+  typedef struct
+  {
+    uint8_t version_h;
+    uint8_t version_l;
+    uint8_t bms_status;                // 0x00 : wakeup, 0X01 :  discharge, 0x02 : charge, 0x03 : charger, 0x04 : precharge, 0x05 : charge_err, 0x06 : waterfall_light, 0x07 : self_discharge, 0x08 : junk.
+    uint8_t SOC;                       // SOC 0-100%
+    int32_t current;                   // （unit: mA)
+    uint16_t cycle;                    // The current number of cycles of the battery
+    std::array<int8_t, 2> BQ_NTC;      // x1 degrees centigrade
+    std::array<int8_t, 2> MCU_NTC;     // x1 degrees centigrade
+    std::array<uint16_t, 10> cell_vol; // cell voltage mV
+  } BmsState;
+
+  typedef struct
+  {
+    float x;
+    float y;
+    float z;
+  } Cartesian;
+
+  typedef struct
+  {
+    std::array<float, 4> quaternion;    // quaternion, normalized, (w,x,y,z)
+    std::array<float, 3> gyroscope;     // angular velocity （unit: rad/s)    (raw data)
+    std::array<float, 3> accelerometer; // acceleration （unit: m/(s2))       (raw data)
+    std::array<float, 3> rpy;           // euler angle（unit: rad)
+    int8_t temperature;                 // the temperature of imu (unit: °C)
+  } IMU;                                // when under accelerated motion, the attitude of the robot calculated by IMU will drift.
+
+  typedef struct
+  {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+  } LED; // reserve
+
+  typedef struct
+  {
+    uint8_t mode;       // motor working mode. Servo : 0x0A, Damping : 0x00，Overheat ： 0x08.
+    float q;            // current angle (unit: radian)
+    float dq;           // current velocity (unit: radian/second)
+    float ddq;          // current acc (unit: radian/second*second)
+    float tauEst;       // current estimated output torque (unit: N.m)
+    float q_raw;        // reserve
+    float dq_raw;       // reserve
+    float ddq_raw;      // reserve
+    int8_t temperature; // current temperature (temperature conduction is slow that leads to lag)
+    std::array<uint32_t, 2> reserve;
+  } MotorState; // motor feedback
+
+  typedef struct
+  {
+    uint8_t mode; // desired working mode. Servo : 0x0A, Damping : 0x00.
+    float q;      // desired angle (unit: radian)
+    float dq;     // desired velocity (unit: radian/second)
+    float tau;    // desired output torque (unit: N.m)
+    float Kp;     // desired position stiffness (unit: N.m/rad )
+    float Kd;     // desired velocity stiffness (unit: N.m/(rad/s) )
+    std::array<uint32_t, 3> reserve;
+  } MotorCmd; // motor control
+
+  typedef struct
+  {
+    std::array<uint8_t, 2> head; // reserve
+    uint8_t levelFlag;           // reserve
+    uint8_t frameReserve;        // reserve
+
+    std::array<uint32_t, 2> SN;      // reserve
+    std::array<uint32_t, 2> version; // reserve
+    uint16_t bandWidth;              // reserve
+    IMU imu;
+    std::array<MotorState, 20> motorState;
+    BmsState bms;
+    std::array<int16_t, 4> footForce;       // Data from foot airbag sensor
+    std::array<int16_t, 4> footForceEst;    // reserve，typically zero
+    uint32_t tick;                          // reference real-time from motion controller (unit: ms)
+    std::array<uint8_t, 40> wirelessRemote; // Data from Unitree Joystick.
+    uint32_t reserve;
+
+    uint32_t crc;
+  } LowState; // low level feedback
+
+  typedef struct
+  {
+    std::array<uint8_t, 2> head; // reserve
+    uint8_t levelFlag;           // reserve
+    uint8_t frameReserve;        // reserve
+
+    std::array<uint32_t, 2> SN;      // reserve
+    std::array<uint32_t, 2> version; // reserve
+    uint16_t bandWidth;
+    std::array<MotorCmd, 20> motorCmd;
+    BmsCmd bms;
+    std::array<uint8_t, 40> wirelessRemote; // reserve
+    uint32_t reserve;
+
+    uint32_t crc;
+  } LowCmd; // low level control
+
+  typedef struct
+  {
+    std::array<uint8_t, 2> head; // reserve
+    uint8_t levelFlag;           // reserve
+    uint8_t frameReserve;        // reserve
+
+    std::array<uint32_t, 2> SN;      // reserve
+    std::array<uint32_t, 2> version; // reserve
+    uint16_t bandWidth;
+    IMU imu;
+    std::array<MotorState, 20> motorState;
+    BmsState bms;
+    std::array<int16_t, 4> footForce;           // Data from foot airbag sensor
+    std::array<int16_t, 4> footForceEst;        // reserve，typically zero
+    uint8_t mode;                               // The current mode of the robot
+    float progress;                             // reserve
+    uint8_t gaitType;                           // 0.idle  1.trot  2.trot running  3.climb stair  4.trot obstacle
+    float footRaiseHeight;                      // (unit: m, default: 0.08m), foot up height while walking
+    std::array<float, 3> position;              // (unit: m), from own odometry in inertial frame, usually drift
+    float bodyHeight;                           // (unit: m, default: 0.28m),
+    std::array<float, 3> velocity;              // (unit: m/s), forwardSpeed, sideSpeed, rotateSpeed in body frame
+    float yawSpeed;                             // (unit: rad/s), rotateSpeed in body frame
+    std::array<float, 4> rangeObstacle;         // Distance to nearest obstacle
+    std::array<Cartesian, 4> footPosition2Body; // foot position relative to body
+    std::array<Cartesian, 4> footSpeed2Body;    // foot speed relative to body
+    std::array<uint8_t, 40> wirelessRemote;     // Data from Unitree Joystick.
+    uint32_t reserve;
+
+    uint32_t crc;
+  } HighState; // high level feedback
+
+  typedef struct
+  {
+    std::array<uint8_t, 2> head; // reserve, no need to set.
+    uint8_t levelFlag;           // reserve. No need to set, only need to set UDP class.
+    uint8_t frameReserve;        // reserve
+
+    std::array<uint32_t, 2> SN;      // reserve
+    std::array<uint32_t, 2> version; // reserve
+    uint16_t bandWidth;              // reserve
+    uint8_t mode;                    // 0. idle, default stand
+                                     // 1. force stand (controlled by dBodyHeight + ypr)
+                                     // 2. target velocity walking (controlled by velocity + yawSpeed)
+                                     // 3. target position walking (controlled by position + ypr[0]), reserve
+                                     // 4. path mode walking (reserve for future release), reserve
+                                     // 5. position stand down.
+                                     // 6. position stand up
+                                     // 7. damping mode
+                                     // 8. recovery stand
+                                     // 9. backflip, reserve
+                                     // 10. jumpYaw, only left direction. Note, to use this mode, you need to set mode = 1 first.
+                                     // 11. straightHand. Note, to use this mode, you need to set mode = 1 first.
+
+    uint8_t gaitType;              // 0.idle
+                                   // 1.trot
+                                   // 2.trot running
+                                   // 3.climb stair
+                                   // 4.trot obstacle
+    uint8_t speedLevel;            // reserve
+    float footRaiseHeight;         // (unit: m, range: -0.06~0.03m, default: 0.09m), foot up height while walking, delta value
+    float bodyHeight;              // (unit: m, range: -0.13~0.03m, default: 0.31m), delta value
+    std::array<float, 2> position; // (unit: m), desired position in inertial frame, reserve
+    std::array<float, 3> euler;    // (unit: rad), roll pitch yaw in stand mode
+                                   // (range: roll : -0.75~0.75rad)
+                                   // (range: pitch: -0.75~0.75rad)
+                                   // (range: yaw  : -0.6~0.6rad)
+    std::array<float, 2> velocity; // (unit: m/s), forwardSpeed, sideSpeed in body frame
+                                   // (range: trot : vx:-1.1~1.5m/s,  vy:-1.0~1.0m/s)
+                                   // (range: run  : vx:-2.5~3.5m/s,  vy:-1.0~1.0m/s)
+                                   // (range: stair: vx:-0.2~0.25m/s, vy:-0.15~0.15m/s)
+    float yawSpeed;                // (unit: rad/s), rotateSpeed in body frame
+                                   // (range: trot : -4.0~4.0rad/s)
+                                   // (range: run  : -4.0~4.0rad/s)
+                                   // (range: stair: -0.7~0.7rad/s)
+    BmsCmd bms;
+    std::array<LED, 4> led;                 // reserve
+    std::array<uint8_t, 40> wirelessRemote; // reserve
+    uint32_t reserve;
+
+    uint32_t crc;
+  } HighCmd; // high level control
+
+#pragma pack()
+
+  typedef struct
+  {
+    unsigned long long TotalCount;    // total loop count
+    unsigned long long SendCount;     // total send count
+    unsigned long long RecvCount;     // total receive count
+    unsigned long long SendError;     // total send error
+    unsigned long long FlagError;     // total flag error
+    unsigned long long RecvCRCError;  // total reveive CRC error
+    unsigned long long RecvLoseError; // total lose package count
+  } UDPState;                         // UDP communication state
+
+} // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/go1_const.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_GO1_H_
+#define _UNITREE_LEGGED_GO1_H_
+
+namespace UNITREE_LEGGED_SDK {
+constexpr double go1_Hip_max = 1.047;     // unit:radian ( = 60   degree)
+constexpr double go1_Hip_min = -1.047;    // unit:radian ( = -60  degree)
+constexpr double go1_Thigh_max = 2.966;   // unit:radian ( = 170  degree)
+constexpr double go1_Thigh_min = -0.663;  // unit:radian ( = -38  degree)
+constexpr double go1_Calf_max = -0.837;   // unit:radian ( = -48  degree)
+constexpr double go1_Calf_min = -2.721;   // unit:radian ( = -156 degree)
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/joystick.h">
+/*****************************************************************
+Copyright (c) 2020, Unitree Robotics.Co.Ltd. All rights reserved.
+*****************************************************************/
+#ifndef _UNITREE_LEGGED_JOYSTICK_H_
+#define _UNITREE_LEGGED_JOYSTICK_H_
+
+#include <stdint.h>
+// 16b
+typedef union {
+  struct {
+    uint8_t R1 : 1;
+    uint8_t L1 : 1;
+    uint8_t start : 1;
+    uint8_t select : 1;
+    uint8_t R2 : 1;
+    uint8_t L2 : 1;
+    uint8_t F1 : 1;
+    uint8_t F2 : 1;
+    uint8_t A : 1;
+    uint8_t B : 1;
+    uint8_t X : 1;
+    uint8_t Y : 1;
+    uint8_t up : 1;
+    uint8_t right : 1;
+    uint8_t down : 1;
+    uint8_t left : 1;
+  } components;
+  uint16_t value;
+} xKeySwitchUnion;
+
+// 40 Byte (now used 24B)
+typedef struct {
+  uint8_t head[2];
+  xKeySwitchUnion btn;
+  float lx;
+  float rx;
+  float ry;
+  float L2;
+  float ly;
+
+  uint8_t idle[16];
+} xRockerBtnDataStruct;
+
+#endif  // _UNITREE_LEGGED_JOYSTICK_H_
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/loop.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_LOOP_H_
+#define _UNITREE_LEGGED_LOOP_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <thread>
+#include <pthread.h>
+#include <vector>
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+
+namespace UNITREE_LEGGED_SDK {
+
+constexpr int THREAD_PRIORITY = 95;  // real-time priority
+
+typedef boost::function<void()> Callback;
+
+class Loop {
+ public:
+  Loop(std::string name, float period, int bindCPU = -1)
+      : _name(name), _period(period), _bindCPU(bindCPU) {}
+  ~Loop();
+  void start();
+  void shutdown();
+  virtual void functionCB() = 0;
+
+ private:
+  void entryFunc();
+
+  std::string _name;
+  float _period;
+  int _bindCPU;
+  bool _bind_cpu_flag = false;
+  bool _isrunning = false;
+  std::thread _thread;
+};
+
+/*
+  period     unit:second
+  bindCPU    change the CPU affinity of this thread
+*/
+class LoopFunc : public Loop {
+ public:
+  LoopFunc(std::string name, float period, const Callback& _cb)
+      : Loop(name, period), _fp(_cb) {}
+  LoopFunc(std::string name, float period, int bindCPU, const Callback& _cb)
+      : Loop(name, period, bindCPU), _fp(_cb) {}
+  void functionCB() { (_fp)(); }
+
+ private:
+  boost::function<void()> _fp;
+};
+
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/quadruped.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_QUADRUPED_H_
+#define _UNITREE_LEGGED_QUADRUPED_H_
+
+#include <string>
+
+using namespace std;
+
+namespace UNITREE_LEGGED_SDK {
+
+enum class LeggedType {
+  Aliengo,
+  A1,
+  Go1,
+  B1
+};
+
+string VersionSDK();
+int InitEnvironment();  // memory lock
+
+// definition of each leg and joint
+constexpr int FR_ = 0;  // leg index
+constexpr int FL_ = 1;
+constexpr int RR_ = 2;
+constexpr int RL_ = 3;
+
+constexpr int FR_0 = 0;  // joint index
+constexpr int FR_1 = 1;
+constexpr int FR_2 = 2;
+
+constexpr int FL_0 = 3;
+constexpr int FL_1 = 4;
+constexpr int FL_2 = 5;
+
+constexpr int RR_0 = 6;
+constexpr int RR_1 = 7;
+constexpr int RR_2 = 8;
+
+constexpr int RL_0 = 9;
+constexpr int RL_1 = 10;
+constexpr int RL_2 = 11;
+
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/safety.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_SAFETY_H_
+#define _UNITREE_LEGGED_SAFETY_H_
+
+#include "comm.h"
+#include "quadruped.h"
+
+namespace UNITREE_LEGGED_SDK {
+
+class Safety {
+ public:
+  Safety(LeggedType type);
+  ~Safety();
+  void PositionLimit(LowCmd&);                                    // only effect under Low Level control in Position mode
+  int PowerProtect(LowCmd&, LowState&, int);                      /* only effect under Low Level control, input factor: 1~10,
+                                                                                                             means 10%~100% power limit. If you are new, then use 1; if you are familiar,
+                                                                                                             then can try bigger number or even comment this function. */
+  int PositionProtect(LowCmd&, LowState&, double limit = 0.087);  // default limit is 5 degree
+ private:
+  int WattLimit, Wcount;  // Watt. When limit to 100, you can triger it with 4 hands shaking.
+  double Hip_max, Hip_min, Thigh_max, Thigh_min, Calf_max, Calf_min;
+};
+
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/udp.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_UDP_H_
+#define _UNITREE_LEGGED_UDP_H_
+
+#include "comm.h"
+#include "unitree_legged_sdk/quadruped.h"
+#include <pthread.h>
+#include <stdint.h>
+
+/*
+    UDP critical configuration:
+
+    1. initiativeDisconnect: if need disconnection after connected, another ip/port can access after disconnection
+
+                 /--- block             will block till data come
+    2. recvType  ---- block + timeout   will block till data come or timeout
+                 \--- non block         if no data will return immediately
+
+                  /--- Y  ip/port will be set later
+    3. setIpPort:
+                  \--- N  ip/port not specified, as a server wait for connect
+*/
+
+namespace UNITREE_LEGGED_SDK {
+
+constexpr int UDP_CLIENT_PORT = 8080;                      // local port
+constexpr int UDP_SERVER_PORT = 8007;                      // target port
+constexpr char UDP_SERVER_IP_BASIC[] = "192.168.123.10";   // target IP address
+constexpr char UDP_SERVER_IP_SPORT[] = "192.168.123.161";  // target IP address
+
+typedef enum {
+  nonBlock = 0x00,
+  block = 0x01,
+  blockTimeout = 0x02,
+} RecvEnum;
+
+// Notice: User defined data(like struct) should add crc(4Byte) at the end.
+class UDP {
+ public:
+  UDP(uint8_t level, uint16_t localPort, const char* targetIP, uint16_t targetPort);  // udp use dafault length according to level
+  UDP(uint16_t localPort, const char* targetIP, uint16_t targetPort,
+      int sendLength, int recvLength, bool initiativeDisconnect = false, RecvEnum recvType = RecvEnum::nonBlock);
+  UDP(uint16_t localPort,
+      int sendLength, int recvLength, bool initiativeDisconnect = false, RecvEnum recvType = RecvEnum::nonBlock, bool setIpPort = false);
+  ~UDP();
+
+  void SetIpPort(const char* targetIP, uint16_t targetPort);  // if not indicated at constructor function
+  void SetRecvTimeout(int time);                              // use in RecvEnum::blockTimeout  (unit: ms)
+
+  void SetDisconnectTime(float callback_dt, float disconnectTime);  // initiativeDisconnect = true, disconnect for another IP to connect
+  void SetAccessibleTime(float callback_dt, float accessibleTime);  // check if can access data
+
+  int Send();
+  int Recv();  // directly save in buffer
+
+  void InitCmdData(HighCmd& cmd);
+  void InitCmdData(LowCmd& cmd);
+  int SetSend(char*);
+  int SetSend(HighCmd&);
+  int SetSend(LowCmd&);
+  void GetRecv(char*);
+  void GetRecv(HighState&);
+  void GetRecv(LowState&);
+
+  UDPState udpState;
+  char* targetIP;
+  uint16_t targetPort;
+  char* localIP;
+  uint16_t localPort;
+  bool accessible = false;  // can access or not
+
+ private:
+  void init(uint16_t localPort, const char* targetIP = NULL, uint16_t targetPort = 0);
+
+  int sockFd;
+  bool connected;  // udp works with connect() function, rather than server mode
+  int sendLength;
+  int recvLength;
+  int lose_recv;
+
+  char* recvBuf;
+  char* recvAvaliable;
+  char* sendBuf;
+  pthread_mutex_t sendMutex;
+  pthread_mutex_t recvMutex;
+  pthread_mutex_t udpMutex;
+
+  bool nonblock = true;
+  int blockTimeout = -1;              // use time out method or not, (unit: ms)
+  bool initiativeDisconnect = false;  //
+};
+
+}  // namespace UNITREE_LEGGED_SDK
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/include/unitree_legged_sdk/unitree_legged_sdk.h">
+/**********************************************************************
+ Copyright (c) 2020-2023, Unitree Robotics.Co.Ltd. All rights reserved.
+***********************************************************************/
+
+#ifndef _UNITREE_LEGGED_SDK_H_
+#define _UNITREE_LEGGED_SDK_H_
+
+#include "comm.h"
+#include "safety.h"
+#include "udp.h"
+#include "loop.h"
+#include "quadruped.h"
+#include "joystick.h"
+#include <boost/bind.hpp>
+
+#define UT UNITREE_LEGGED_SDK  // short name
+
+#endif
+</file>
+
+<file path="unitree_legged_sdk/CMakeLists.txt">
+cmake_minimum_required(VERSION 2.8.3)
+project(unitree_legged_sdk)
+
+# check arch and os
+message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64.*")
+  set(ARCH amd64)
+endif()
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64.*")
+  set(ARCH arm64)
+endif()
+
+include_directories(include)
+link_directories(lib/cpp/${ARCH})
+
+option(PYTHON_BUILD "build python wrapper" OFF)
+if(PYTHON_BUILD)
+  add_subdirectory(python_wrapper)
+endif()
+
+set(EXTRA_LIBS -pthread libunitree_legged_sdk.a)
+set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
+set(CMAKE_CXX_STANDARD 14)
+
+find_package(catkin QUIET)
+if(${catkin_FOUND})
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_SOURCE_DIR}/lib/cpp/${ARCH}/libunitree_legged_sdk.a
+  )
+endif()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+# one pc one process
+add_executable(example_position example/example_position.cpp)
+target_link_libraries(example_position ${EXTRA_LIBS})
+
+add_executable(example_velocity example/example_velocity.cpp)
+target_link_libraries(example_velocity ${EXTRA_LIBS})
+
+add_executable(example_torque example/example_torque.cpp)
+target_link_libraries(example_torque ${EXTRA_LIBS})
+
+add_executable(example_walk example/example_walk.cpp)
+target_link_libraries(example_walk ${EXTRA_LIBS})
+
+add_executable(example_joystick example/example_joystick.cpp)
+target_link_libraries(example_joystick ${EXTRA_LIBS})
+
+
+# install
+install(TARGETS
+  example_position example_velocity example_torque example_walk example_joystick
+  DESTINATION bin/unitree)
+install(DIRECTORY lib/cpp/${ARCH}/
+  DESTINATION lib/unitree
+  USE_SOURCE_PERMISSIONS)
+</file>
+
+<file path="unitree_legged_sdk/package.xml">
+<?xml version="1.0"?>
+
+<package format="2">
+  <name>unitree_legged_sdk</name>
+  <version>0.0.0</version>
+  <description>The unitree_legged_sdk package.</description>
+  <maintainer email="laikago@unitree.cc">unitree</maintainer>
+  <license>TODO</license>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
+</file>
+
+<file path="CMakeLists.txt">
+cmake_minimum_required(VERSION 3.8)
+project(unitree_ros2_cpp)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(launch_testing_ament_cmake REQUIRED)
+
+
+# Install .msg
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/BmsState.msg"
+  "msg/HighCmd.msg"
+  "msg/IMU.msg"
+  "msg/BmsCmd.msg"
+  "msg/HighState.msg"
+  "msg/LED.msg"
+  "msg/Cartesian.msg"
+  "msg/LowCmd.msg"
+  "msg/LowState.msg"
+  "msg/MotorState.msg"
+  "msg/MotorCmd.msg"
+  DEPENDENCIES
+)
+rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+
+
+#
+# Linking Unitree's SDK's
+#
+link_directories(${CMAKE_SOURCE_DIR}/unitree_legged_sdk/lib/cpp/amd64)
+SET(LEGGED_LIB ${CMAKE_SOURCE_DIR}/unitree_legged_sdk/lib/cpp/amd64/libunitree_legged_sdk.a)
+
+
+#
+# Include SDK's header files
+#
+include_directories(include ${CMAKE_SOURCE_DIR}/unitree_legged_sdk/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+
+#
+# Create executables
+#
+add_executable(legged_controller src/legged_controller.cpp)
+#
+# Set dependacies
+#
+ament_export_dependencies(rosidl_default_runtime) # msg export
+ament_target_dependencies(legged_controller rclcpp std_msgs geometry_msgs sensor_msgs nav_msgs)
+
+
+
+# Install includes before packages
+install(
+  DIRECTORY include 
+  ${CMAKE_SOURCE_DIR}/unitree_legged_sdk/include 
+  DESTINATION include
+)
+
+# Install launch file
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+#
+# Install executables to package
+#
+install(TARGETS 
+  legged_controller
+  DESTINATION lib/${PROJECT_NAME})
+
+
+#
+# Install SDK's
+#
+target_link_libraries(legged_controller
+  ${LEGGED_LIB}
+  "${cpp_typesupport_target}"
+  pthread
+  rt
+)
+
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  set(ament_cmake_copyright_FOUND TRUE)
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()
+</file>
+
+<file path="package.xml">
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>unitree_ros2_cpp</name>
+  <version>0.1.0</version>
+  <description>A ROS2 wrapper to the Unitree SDK for Go1 Robot</description>
+  <maintainer email="ARAK@github.com">ARAK</maintainer>
+  <license>AGPL-3.0 license</license>
+
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>stdmsgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>opencv</depend>
+
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+</file>
+
+</files>
