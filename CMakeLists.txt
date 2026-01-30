@@ -4,7 +4,7 @@ project(unitree_ros2_cpp)
 # -----------------------------------------------------------------------
 # Policy Settings (Silence Warnings)
 # -----------------------------------------------------------------------
-# Silence CMP0148 (FindPythonInterp/Libs) warnings common in Humble/Rolling
+# Silence CMP0148 (FindPythonInterp/Libs) warnings
 if(POLICY CMP0148)
   cmake_policy(SET CMP0148 OLD)
 endif()
@@ -105,8 +105,6 @@ target_link_libraries(legged_controller
 # -----------------------------------------------------------------------
 # Install
 # -----------------------------------------------------------------------
-
-# Fixed: Only install the SDK includes. Removed the reference to the non-existent root 'include' folder.
 install(
   DIRECTORY ${CMAKE_SOURCE_DIR}/unitree_legged_sdk/include/
   DESTINATION include
