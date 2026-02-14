@@ -1,7 +1,4 @@
 ##
-# Based on tutlesim launch from: https://docs.ros.org/en/humble/Tutorials/Intermediate/Launch/Creating-Launch-Files.html#write-the-launch-file
-# Later modified to work for unitree_ros2_cpp package.
-#
 # Unitree Go1 Ros wrapper launcher for control
 # 
 import os
@@ -33,15 +30,26 @@ def generate_launch_description():
         description='Remote UDP port on the robot'
     )
 
+    # Options: 
+    # 'individual': Standard ROS topics (odom, imu, etc)
+    # 'combined': One big HighState message
+    # 'both': Publishes both
+    publish_mode_arg = DeclareLaunchArgument(
+        'publish_mode',
+        default_value='individual',
+        description='Publishing mode: "individual", "combined", or "both"'
+    )
+
     legged_sdk_node = Node(
         package='unitree_ros2_cpp',
         executable='legged_controller',
-        name='legged_controller', # Must match the node name in main()
+        name='legged_controller',
         output='screen',
         parameters=[{
             'robot_ip': LaunchConfiguration('robot_ip'),
             'local_port': LaunchConfiguration('local_port'),
-            'remote_port': LaunchConfiguration('remote_port')
+            'remote_port': LaunchConfiguration('remote_port'),
+            'publish_mode': LaunchConfiguration('publish_mode')
         }]
     )
     
@@ -50,5 +58,6 @@ def generate_launch_description():
         robot_ip_arg,
         local_port_arg,
         remote_port_arg,
+        publish_mode_arg,
         legged_sdk_node,
     ])
