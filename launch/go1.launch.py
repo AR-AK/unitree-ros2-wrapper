@@ -6,10 +6,12 @@ import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node
 
 def generate_launch_description():
-    namespace = 'go1'
+    # Defining a specific namespace for the robot allows running multiple 
+    # robots or separating topics from other hardware.
+    robot_namespace = 'go1'
     
     # Declare launch arguments for configuration
     robot_ip_arg = DeclareLaunchArgument(
@@ -30,34 +32,23 @@ def generate_launch_description():
         description='Remote UDP port on the robot'
     )
 
-    # Options: 
-    # 'individual': Standard ROS topics (odom, imu, etc)
-    # 'combined': One big HighState message
-    # 'both': Publishes both
-    publish_mode_arg = DeclareLaunchArgument(
-        'publish_mode',
-        default_value='individual',
-        description='Publishing mode: "individual", "combined", or "both"'
-    )
-
     legged_sdk_node = Node(
         package='unitree_ros2_cpp',
         executable='legged_controller',
         name='legged_controller',
+        namespace=robot_namespace, # Scopes topics to /go1/...
         output='screen',
+        emulate_tty=True, # Improved console output color
         parameters=[{
             'robot_ip': LaunchConfiguration('robot_ip'),
             'local_port': LaunchConfiguration('local_port'),
-            'remote_port': LaunchConfiguration('remote_port'),
-            'publish_mode': LaunchConfiguration('publish_mode')
+            'remote_port': LaunchConfiguration('remote_port')
         }]
     )
     
     return LaunchDescription([
-        PushRosNamespace(namespace),
         robot_ip_arg,
         local_port_arg,
         remote_port_arg,
-        publish_mode_arg,
         legged_sdk_node,
     ])
