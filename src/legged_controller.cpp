@@ -13,13 +13,7 @@
 // limitations under the License.
 
 /*
- * Production Grade Unitree Go1 Controller for ROS 2
- * 
- * Improvements:
- * - Thread-safe memory sharing using Mutex.
- * - Centralized UDP handling.
- * - ROS Parameters for IP and Port configuration via Launch file.
- * - Consolidated timers for CPU efficiency.
+ * Unitree Go1 Controller for ROS 2
  */
 
 #include <chrono>
@@ -29,13 +23,20 @@
 #include <mutex>
 #include <vector>
 #include <cmath>
+#include <thread>
 
 // ROS 2 Includes
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/temperature.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 // Unitree ROS 2 Messages
 #include "unitree_ros2_cpp/msg/bms_state.hpp"
@@ -56,10 +57,10 @@ using namespace std::chrono_literals;
 class LeggedRobotInterface
 {
 public:
-  // Constructor now accepts ports as well
   LeggedRobotInterface(const std::string& robot_ip, uint16_t local_port, uint16_t remote_port) 
     : safe(LeggedType::Go1),
-      udp(HIGHLEVEL, local_port, robot_ip.c_str(), remote_port)
+      udp(HIGHLEVEL, local_port, robot_ip.c_str(), remote_port),
+      has_received_(false)
   {
     udp.InitCmdData(cmd);
     // Initialize default safe commands
@@ -86,6 +87,9 @@ public:
     
     std::lock_guard<std::mutex> lock(data_mutex_);
     udp.GetRecv(state);
+    if (udp.udpState.RecvCount > 0) {
+      has_received_ = true;
+    }
   }
 
   // --- Thread-Safe Getters ---
@@ -95,6 +99,11 @@ public:
     return state;
   }
 
+  bool is_data_ready() {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    return has_received_;
+  }
+
   // --- Thread-Safe Setters ---
 
   void set_velocity(float x, float y, float yaw, float body_h) {
@@ -102,7 +111,17 @@ public:
     cmd.velocity[0] = x;
     cmd.velocity[1] = y;
     cmd.yawSpeed = yaw;
-    if(std::abs(body_h) > 0.001) cmd.bodyHeight = body_h;
+    // Only update body height from Twist if it falls within a physically safe absolute range [0.15m, 0.40m]
+    if (body_h >= 0.15f && body_h <= 0.40f) {
+      cmd.bodyHeight = body_h;
+    }
+  }
+
+  void set_body_height(float body_h) {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    if (body_h >= 0.15f && body_h <= 0.40f) {
+      cmd.bodyHeight = body_h;
+    }
   }
 
   void set_mode(uint8_t mode) {
@@ -139,77 +158,253 @@ private:
   HighCmd cmd = {};
   HighState state = {};
   std::mutex data_mutex_; 
+  bool has_received_;
 };
 
 
 // =================================================================================================
-// NODE: LeggedUDPLoop
-// Description: Runs the High-Frequency loop to sync data with the robot.
+// CLASS: LeggedControllerNode
+// Description: Unified ROS 2 Node handling parameter loading, thread-safe UDP communication,
+//              best-effort telemetry publishing, dynamic TF broadcasting, and safe subscriber command dispatch.
 // =================================================================================================
-class LeggedUDPLoop : public rclcpp::Node
+class LeggedControllerNode : public rclcpp::Node
 {
 public:
-  LeggedUDPLoop(std::shared_ptr<LeggedRobotInterface> interface)
-      : Node("legged_udp_loop"), interface_(interface)
+  LeggedControllerNode() : Node("legged_controller")
   {
-    timer_udp_ = this->create_wall_timer(
-        2ms, std::bind(&LeggedUDPLoop::udp_callback, this));
+    // --- Parameters ---
+    this->declare_parameter<std::string>("robot_ip", "192.168.123.161");
+    this->declare_parameter<int>("local_port", 8090);
+    this->declare_parameter<int>("remote_port", 8082);
+    this->declare_parameter<double>("cmd_watchdog_timeout", 0.5);
+    this->declare_parameter<bool>("publish_tf", true);
+    this->declare_parameter<std::string>("odom_frame", "odom");
+    this->declare_parameter<std::string>("base_frame", "base_link");
+    this->declare_parameter<int>("foot_contact_threshold", 40);
+
+    std::string robot_ip = this->get_parameter("robot_ip").as_string();
+    int local_port = this->get_parameter("local_port").as_int();
+    int remote_port = this->get_parameter("remote_port").as_int();
+    watchdog_timeout_ = this->get_parameter("cmd_watchdog_timeout").as_double();
+    publish_tf_ = this->get_parameter("publish_tf").as_bool();
+    odom_frame_ = this->get_parameter("odom_frame").as_string();
+    base_frame_ = this->get_parameter("base_frame").as_string();
+    foot_contact_threshold_ = this->get_parameter("foot_contact_threshold").as_int();
+
+    // --- Standard Legged Robot Joint Names (matches official URDF representation) ---
+    joint_names_ = {
+      "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
+      "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
+      "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
+      "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"
+    };
+
+    // --- Robot Interface ---
+    interface_ = std::make_shared<LeggedRobotInterface>(robot_ip, local_port, remote_port);
+    last_cmd_time_ = this->now();
+
+    // --- Callback Groups ---
+    callback_group_udp_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    callback_group_telemetry_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    callback_group_commands_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+
+    // --- TF Broadcaster ---
+    if (publish_tf_) {
+      tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+      RCLCPP_INFO(this->get_logger(), "TF Broadcast is ENABLED (%s -> %s)", odom_frame_.c_str(), base_frame_.c_str());
+    } else {
+      RCLCPP_INFO(this->get_logger(), "TF Broadcast is DISABLED (External EKF mode)");
+    }
+
+    // --- Publishers ---
+    auto sensor_qos = rclcpp::SensorDataQoS(); // Best Effort, Depth 10, ideal for high-freq sensor feeds
+
+    pub_bms_ = this->create_publisher<unitree_ros2_cpp::msg::BmsState>("legged_data/sensors/bms", 10);
+    pub_foot_force_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/sensors/foot_force", 10);
+    pub_temp_ = this->create_publisher<sensor_msgs::msg::Temperature>("legged_data/sensors/system_temperature", 10);
+    pub_mode_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/mode", 10);
+    pub_gait_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/gait_type", 10);
+    pub_about_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/about_go1", 10);
+    pub_foot_raise_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/foot_raise_height", 10);
     
-    RCLCPP_INFO(this->get_logger(), "Legged UDP Loop started.");
+    // Switch high-frequency streams to standard SensorDataQoS (Best Effort)
+    pub_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("legged_data/sensors/imu", sensor_qos);
+    pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", sensor_qos);
+    pub_joint_states_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", sensor_qos);
+
+    // Individual contact publishers
+    pub_contact_fr_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/fr", 10);
+    pub_contact_fl_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/fl", 10);
+    pub_contact_rr_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/rr", 10);
+    pub_contact_rl_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/rl", 10);
+
+    for (int i = 0; i < 12; ++i) {
+        std::string topic = "legged_data/actuators/motor_" + std::to_string(i);
+        pub_motors_[i] = this->create_publisher<unitree_ros2_cpp::msg::MotorState>(topic, sensor_qos);
+    }
+
+    // --- Subscriptions ---
+    auto sub_options = rclcpp::SubscriptionOptions();
+    sub_options.callback_group = callback_group_commands_;
+
+    sub_twist_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        "cmd_vel", 10, std::bind(&LeggedControllerNode::twist_callback, this, std::placeholders::_1), sub_options);
+
+    sub_mode_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+        "cmd_mode", 10, std::bind(&LeggedControllerNode::mode_callback, this, std::placeholders::_1), sub_options);
+
+    sub_pos_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+        "cmd_pos", 10, std::bind(&LeggedControllerNode::pos_callback, this, std::placeholders::_1), sub_options);
+
+    sub_height_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+        "cmd_foot_raise_height", 10, std::bind(&LeggedControllerNode::height_callback, this, std::placeholders::_1), sub_options);
+
+    sub_euler_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
+        "cmd_euler", 10, std::bind(&LeggedControllerNode::euler_callback, this, std::placeholders::_1), sub_options);
+
+    sub_body_height_ = this->create_subscription<std_msgs::msg::Float32>(
+        "cmd_body_height", 10, std::bind(&LeggedControllerNode::body_height_callback, this, std::placeholders::_1), sub_options);
+
+    // --- Timers ---
+    timer_udp_ = this->create_wall_timer(
+        2ms, std::bind(&LeggedControllerNode::udp_callback, this), callback_group_udp_);
+
+    timer_slow_ = this->create_wall_timer(
+        1000ms, std::bind(&LeggedControllerNode::slow_callback, this), callback_group_telemetry_);
+    timer_medium_ = this->create_wall_timer(
+        100ms, std::bind(&LeggedControllerNode::medium_callback, this), callback_group_telemetry_);
+    timer_fast_ = this->create_wall_timer(
+        2ms, std::bind(&LeggedControllerNode::fast_callback, this), callback_group_telemetry_);
+
+    // --- Dynamic Parameters Callback ---
+    parameters_callback_handle_ = this->add_on_set_parameters_callback(
+        std::bind(&LeggedControllerNode::parameters_callback, this, std::placeholders::_1));
+
+    RCLCPP_INFO(this->get_logger(), "Legged Controller Node initialized successfully.");
+  }
+
+  // Destructor forces safe robot stand-down to prevent runaways or falling down hard
+  ~LeggedControllerNode()
+  {
+    RCLCPP_INFO(this->get_logger(), "Shutting down Legged Controller Node. Sending safe stand-down commands...");
+    if (interface_ && interface_->is_data_ready()) {
+      interface_->set_velocity(0.0f, 0.0f, 0.0f, 0.0f);
+      interface_->set_mode(0); // Set to default standing mode
+      // Send UDP packets multiple times to guarantee arrival before socket is destroyed
+      for (int i = 0; i < 5; ++i) {
+        interface_->udp_send();
+        std::this_thread::sleep_for(2ms);
+      }
+    }
   }
 
 private:
+  // --- UDP Loop Callback ---
   void udp_callback()
   {
+    // Watchdog checking: if no command received for > watchdog_timeout_ seconds, force zero velocity
+    double elapsed = (this->now() - last_cmd_time_).seconds();
+    if (elapsed > watchdog_timeout_) {
+      if (!watchdog_triggered_) {
+        RCLCPP_WARN(this->get_logger(), "Command timeout! No cmd_vel received for %.2f seconds. Halting robot safely.", elapsed);
+        watchdog_triggered_ = true;
+      }
+      interface_->set_velocity(0.0f, 0.0f, 0.0f, 0.0f); // Halt robot motion safely
+    }
+
+    // Execute hardware communication
     interface_->udp_send();
     interface_->udp_recv();
   }
 
-  std::shared_ptr<LeggedRobotInterface> interface_;
-  rclcpp::TimerBase::SharedPtr timer_udp_;
-};
-
-
-// =================================================================================================
-// NODE: LeggedDataRX (Publisher)
-// Description: Reads data from the Interface and publishes to ROS topics.
-// =================================================================================================
-class LeggedDataRX : public rclcpp::Node
-{
-public:
-  LeggedDataRX(std::shared_ptr<LeggedRobotInterface> interface)
-      : Node("legged_data_rx"), interface_(interface)
+  // --- Dynamic Parameter Validation & Updates ---
+  rcl_interfaces::msg::SetParametersResult parameters_callback(const std::vector<rclcpp::Parameter> &parameters)
   {
-    pub_bms_ = this->create_publisher<unitree_ros2_cpp::msg::BmsState>("legged_data/sensors/bms", 10);
-    pub_foot_force_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/sensors/foot_force", 10);
-    pub_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("legged_data/sensors/imu", 10);
-    pub_mode_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/mode", 10);
-    pub_temp_ = this->create_publisher<sensor_msgs::msg::Temperature>("legged_data/sensors/system_temperature", 10);
-    pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
-    pub_gait_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/gait_type", 10);
-    pub_about_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/about_go1", 10);
-    pub_foot_raise_ = this->create_publisher<unitree_ros2_cpp::msg::HighState>("legged_data/status/foot_raise_height", 10);
-
-    for(int i=0; i<12; ++i) {
-        std::string topic = "legged_data/actuators/motor_" + std::to_string(i);
-        pub_motors_[i] = this->create_publisher<unitree_ros2_cpp::msg::MotorState>(topic, 10);
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = true;
+    result.reason = "success";
+    for (const auto &param : parameters) {
+      if (param.get_name() == "cmd_watchdog_timeout") {
+        double val = param.as_double();
+        if (val >= 0.05 && val <= 10.0) {
+          watchdog_timeout_ = val;
+          RCLCPP_INFO(this->get_logger(), "Dynamic Parameter Updated: cmd_watchdog_timeout = %.2f s", val);
+        } else {
+          result.successful = false;
+          result.reason = "cmd_watchdog_timeout must be between 0.05 and 10.0 seconds";
+        }
+      } else if (param.get_name() == "publish_tf") {
+        publish_tf_ = param.as_bool();
+        if (publish_tf_ && !tf_broadcaster_) {
+          tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+        }
+        RCLCPP_INFO(this->get_logger(), "Dynamic Parameter Updated: publish_tf = %s", publish_tf_ ? "true" : "false");
+      } else if (param.get_name() == "foot_contact_threshold") {
+        int val = param.as_int();
+        if (val >= 5 && val <= 200) {
+          foot_contact_threshold_ = val;
+          RCLCPP_INFO(this->get_logger(), "Dynamic Parameter Updated: foot_contact_threshold = %d", val);
+        } else {
+          result.successful = false;
+          result.reason = "foot_contact_threshold must be between 5 and 200";
+        }
+      }
     }
-
-    timer_slow_ = this->create_wall_timer(1000ms, std::bind(&LeggedDataRX::slow_callback, this));
-    timer_medium_ = this->create_wall_timer(100ms, std::bind(&LeggedDataRX::medium_callback, this));
-    timer_fast_ = this->create_wall_timer(2ms, std::bind(&LeggedDataRX::fast_callback, this));
-
-    RCLCPP_INFO(this->get_logger(), "Legged Data RX (Publisher) started.");
+    return result;
   }
 
-private:
+  // --- Subscriber Callbacks ---
+  void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+  {
+    last_cmd_time_ = this->now();
+    if (watchdog_triggered_) {
+      RCLCPP_INFO(this->get_logger(), "Command link restored. Control active.");
+      watchdog_triggered_ = false;
+    }
+    interface_->set_velocity(msg->linear.x, msg->linear.y, msg->angular.z, msg->linear.z);
+  }
+
+  void body_height_callback(const std_msgs::msg::Float32::SharedPtr msg)
+  {
+    interface_->set_body_height(msg->data);
+  }
+
+  void mode_callback(const unitree_ros2_cpp::msg::HighCmd::SharedPtr msg)
+  {
+    interface_->set_mode(msg->mode);
+  }
+
+  void pos_callback(const unitree_ros2_cpp::msg::HighCmd::SharedPtr msg)
+  {
+    interface_->set_position(msg->position[0], msg->position[1]);
+  }
+
+  void height_callback(const unitree_ros2_cpp::msg::HighCmd::SharedPtr msg)
+  {
+    interface_->set_foot_raise_height(msg->foot_raise_height);
+  }
+
+  void euler_callback(const unitree_ros2_cpp::msg::HighCmd::SharedPtr msg)
+  {
+    interface_->set_euler(msg->euler[0], msg->euler[1], msg->euler[2]);
+  }
+
+  // --- Telemetry Timer Callbacks ---
   void slow_callback()
   {
+    if (!interface_->is_data_ready()) {
+       RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for first valid UDP telemetry packet from robot...");
+       return;
+    }
+    RCLCPP_INFO_ONCE(this->get_logger(), "First valid UDP telemetry packet received! Starting telemetry publishers.");
+
     auto state = interface_->get_state();
+    
+    // --- Core Telemetry Message Packing ---
     auto bms_msg = unitree_ros2_cpp::msg::BmsState();
     bms_msg.soc = state.bms.SOC;
     bms_msg.current = state.bms.current;
-    for(int i=0; i<10; i++) bms_msg.cell_vol[i] = state.bms.cell_vol[i];
+    for (int i = 0; i < 10; i++) bms_msg.cell_vol[i] = state.bms.cell_vol[i];
     bms_msg.version_h = state.bms.version_h;
     bms_msg.bms_status = state.bms.bms_status;
     bms_msg.cycle = state.bms.cycle;
@@ -229,13 +424,45 @@ private:
     about_msg.version = state.version;
     about_msg.bandwidth = state.bandWidth;
     pub_about_->publish(about_msg);
+
+    // --- Embedded Safety Diagnostics Monitoring ---
+    // 1. Motor Thermal Checks
+    bool motor_hot = false;
+    int hottest_motor = -1;
+    int max_temp = -128;
+    for (int i = 0; i < 12; i++) {
+      if (state.motorState[i].temperature > max_temp) {
+        max_temp = state.motorState[i].temperature;
+        hottest_motor = i;
+      }
+      if (state.motorState[i].temperature > 55) { // 55°C is hot threshold for brushless actuator cores
+        motor_hot = true;
+      }
+    }
+    if (motor_hot) {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, 
+                           "MOTOR OVERHEATING! Motor %d is at %d°C. Please let the robot cool down.", 
+                           hottest_motor, max_temp);
+    }
+
+    // 2. Battery SOC Warnings
+    if (state.bms.SOC < 15 && state.bms.SOC > 0) {
+      RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 10000, 
+                            "BATTERY CRITICALLY LOW! SOC is %d%%. Please recharge or swap battery immediately.", 
+                            state.bms.SOC);
+    }
   }
 
   void medium_callback()
   {
+    if (!interface_->is_data_ready()) {
+      return;
+    }
+
     auto state = interface_->get_state();
+    
     auto force_msg = unitree_ros2_cpp::msg::HighState();
-    for(int i=0; i<4; i++) force_msg.foot_force[i] = state.footForce[i];
+    for (int i = 0; i < 4; i++) force_msg.foot_force[i] = state.footForce[i];
     pub_foot_force_->publish(force_msg);
 
     auto mode_msg = unitree_ros2_cpp::msg::HighState();
@@ -249,13 +476,34 @@ private:
     auto height_msg = unitree_ros2_cpp::msg::HighState();
     height_msg.foot_raise_height = state.footRaiseHeight;
     pub_foot_raise_->publish(height_msg);
+
+    // --- Foot Contact Monitoring based on force thresholds ---
+    auto contact_fr = std_msgs::msg::Bool();
+    auto contact_fl = std_msgs::msg::Bool();
+    auto contact_rr = std_msgs::msg::Bool();
+    auto contact_rl = std_msgs::msg::Bool();
+
+    contact_fr.data = state.footForce[0] > foot_contact_threshold_;
+    contact_fl.data = state.footForce[1] > foot_contact_threshold_;
+    contact_rr.data = state.footForce[2] > foot_contact_threshold_;
+    contact_rl.data = state.footForce[3] > foot_contact_threshold_;
+
+    pub_contact_fr_->publish(contact_fr);
+    pub_contact_fl_->publish(contact_fl);
+    pub_contact_rr_->publish(contact_rr);
+    pub_contact_rl_->publish(contact_rl);
   }
 
   void fast_callback()
   {
+    if (!interface_->is_data_ready()) {
+      return;
+    }
+
     auto state = interface_->get_state();
     auto current_time = this->get_clock()->now();
 
+    // --- IMU Telemetry Packing (Best-Effort SensorDataQoS) ---
     auto imu_msg = sensor_msgs::msg::Imu();
     imu_msg.header.stamp = current_time;
     imu_msg.header.frame_id = "imu_link";
@@ -269,12 +517,20 @@ private:
     imu_msg.linear_acceleration.x = state.imu.accelerometer[0];
     imu_msg.linear_acceleration.y = state.imu.accelerometer[1];
     imu_msg.linear_acceleration.z = state.imu.accelerometer[2];
+
+    // Standard high-quality IMU covariance values (crucial for EKF state estimation/robot_localization)
+    for (int i = 0; i < 9; i += 4) {
+      imu_msg.orientation_covariance[i] = 1e-5;
+      imu_msg.angular_velocity_covariance[i] = 1e-6;
+      imu_msg.linear_acceleration_covariance[i] = 1e-4;
+    }
     pub_imu_->publish(imu_msg);
 
+    // --- Odometry Telemetry Packing (Best-Effort SensorDataQoS) ---
     auto odom_msg = nav_msgs::msg::Odometry();
     odom_msg.header.stamp = current_time;
-    odom_msg.header.frame_id = "odom";
-    odom_msg.child_frame_id = "base_link";
+    odom_msg.header.frame_id = odom_frame_;
+    odom_msg.child_frame_id = base_frame_;
 
     odom_msg.twist.twist.linear.x = state.velocity[0];
     odom_msg.twist.twist.linear.y = state.velocity[1];
@@ -285,9 +541,53 @@ private:
     odom_msg.pose.pose.position.x = state.position[0];
     odom_msg.pose.pose.position.y = state.position[1];
     odom_msg.pose.pose.position.z = state.position[2];
+
+    // Standard high-quality robot odometry covariance values (essential for robot_localization)
+    for (int i = 0; i < 36; i += 7) {
+      odom_msg.pose.covariance[i] = 1e-3;
+      odom_msg.twist.covariance[i] = 1e-3;
+    }
+    // Set stabilized dimensions (z, roll, pitch) to have minimal/negligible variance
+    odom_msg.pose.covariance[14] = 1e-5;  // z pose
+    odom_msg.pose.covariance[21] = 1e-5;  // roll pose
+    odom_msg.pose.covariance[28] = 1e-5;  // pitch pose
+    odom_msg.twist.covariance[14] = 1e-5; // z twist
+    odom_msg.twist.covariance[21] = 1e-5; // roll twist
+    odom_msg.twist.covariance[28] = 1e-5; // pitch twist
+
     pub_odom_->publish(odom_msg);
 
-    for(int i=0; i<12; i++) {
+    // --- Dynamic JointState Publisher (URDF / robot_state_publisher compliant) ---
+    auto joint_state_msg = sensor_msgs::msg::JointState();
+    joint_state_msg.header.stamp = current_time;
+    joint_state_msg.name = joint_names_;
+    joint_state_msg.position.resize(12);
+    joint_state_msg.velocity.resize(12);
+    joint_state_msg.effort.resize(12);
+
+    for (int i = 0; i < 12; i++) {
+      joint_state_msg.position[i] = state.motorState[i].q;
+      joint_state_msg.velocity[i] = state.motorState[i].dq;
+      joint_state_msg.effort[i] = state.motorState[i].tauEst;
+    }
+    pub_joint_states_->publish(joint_state_msg);
+
+    // --- Dynamic TF odom -> base_link Broadcast ---
+    if (publish_tf_ && tf_broadcaster_) {
+      geometry_msgs::msg::TransformStamped tf_msg;
+      tf_msg.header.stamp = current_time;
+      tf_msg.header.frame_id = odom_frame_;
+      tf_msg.child_frame_id = base_frame_;
+
+      tf_msg.transform.translation.x = state.position[0];
+      tf_msg.transform.translation.y = state.position[1];
+      tf_msg.transform.translation.z = state.position[2];
+      tf_msg.transform.rotation = imu_msg.orientation;
+
+      tf_broadcaster_->sendTransform(tf_msg);
+    }
+
+    for (int i = 0; i < 12; i++) {
         auto m_msg = unitree_ros2_cpp::msg::MotorState();
         m_msg.mode = state.motorState[i].mode;
         m_msg.q = state.motorState[i].q;
@@ -302,86 +602,62 @@ private:
     }
   }
 
+  // --- Node Members ---
   std::shared_ptr<LeggedRobotInterface> interface_;
-  
+  double watchdog_timeout_;
+  rclcpp::Time last_cmd_time_;
+  bool watchdog_triggered_ = false;
+
+  bool publish_tf_;
+  std::string odom_frame_;
+  std::string base_frame_;
+  int foot_contact_threshold_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+  std::vector<std::string> joint_names_;
+
+  // Callback Groups
+  rclcpp::CallbackGroup::SharedPtr callback_group_udp_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_telemetry_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_commands_;
+
+  // Publishers
   rclcpp::Publisher<unitree_ros2_cpp::msg::BmsState>::SharedPtr pub_bms_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_foot_force_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr pub_imu_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_mode_;
   rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr pub_temp_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pub_joint_states_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_gait_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_about_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_foot_raise_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr pub_motors_[12];
 
-  rclcpp::TimerBase::SharedPtr timer_slow_;
-  rclcpp::TimerBase::SharedPtr timer_medium_;
-  rclcpp::TimerBase::SharedPtr timer_fast_;
-};
+  // Individual contact publishers
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_fr_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_fl_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_rr_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_rl_;
 
-
-// =================================================================================================
-// NODE: LeggedControl (Subscriber)
-// Description: Listens to ROS commands and updates the Interface.
-// =================================================================================================
-class LeggedControl : public rclcpp::Node
-{
-public:
-  LeggedControl(std::shared_ptr<LeggedRobotInterface> interface)
-      : Node("legged_data_tx"), interface_(interface)
-  {
-    sub_twist_ = this->create_subscription<geometry_msgs::msg::Twist>(
-        "cmd_vel", 10, std::bind(&LeggedControl::twist_callback, this, std::placeholders::_1));
-
-    sub_mode_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
-        "cmd_mode", 10, std::bind(&LeggedControl::mode_callback, this, std::placeholders::_1));
-
-    sub_pos_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
-        "cmd_pos", 10, std::bind(&LeggedControl::pos_callback, this, std::placeholders::_1));
-
-    sub_height_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
-        "cmd_foot_raise_height", 10, std::bind(&LeggedControl::height_callback, this, std::placeholders::_1));
-
-    sub_euler_ = this->create_subscription<unitree_ros2_cpp::msg::HighCmd>(
-        "cmd_euler", 10, std::bind(&LeggedControl::euler_callback, this, std::placeholders::_1));
-
-    RCLCPP_INFO(this->get_logger(), "Legged Control (Subscriber) started.");
-  }
-
-private:
-  void twist_callback(const geometry_msgs::msg::Twist &msg)
-  {
-    interface_->set_velocity(msg.linear.x, msg.linear.y, msg.angular.z, msg.linear.z);
-  }
-
-  void mode_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
-  {
-    interface_->set_mode(msg.mode);
-  }
-
-  void pos_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
-  {
-    interface_->set_position(msg.position[0], msg.position[1]);
-  }
-
-  void height_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
-  {
-    interface_->set_foot_raise_height(msg.foot_raise_height);
-  }
-
-  void euler_callback(const unitree_ros2_cpp::msg::HighCmd &msg)
-  {
-    interface_->set_euler(msg.euler[0], msg.euler[1], msg.euler[2]);
-  }
-
-  std::shared_ptr<LeggedRobotInterface> interface_;
+  // Subscriptions
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_;
   rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr sub_mode_;
   rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr sub_pos_;
   rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr sub_height_;
   rclcpp::Subscription<unitree_ros2_cpp::msg::HighCmd>::SharedPtr sub_euler_;
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_body_height_;
+
+  // Timers
+  rclcpp::TimerBase::SharedPtr timer_udp_;
+  rclcpp::TimerBase::SharedPtr timer_slow_;
+  rclcpp::TimerBase::SharedPtr timer_medium_;
+  rclcpp::TimerBase::SharedPtr timer_fast_;
+
+  // Dynamic Parameter Handle
+  OnSetParametersCallbackHandle::SharedPtr parameters_callback_handle_;
 };
+
 
 // =================================================================================================
 // MAIN
@@ -390,39 +666,11 @@ int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
   
-  // Create a specific node to load configuration parameters.
-  // The node name "legged_controller" must match the name defined in the launch file.
-  auto config_node = std::make_shared<rclcpp::Node>("legged_controller");
-  
-  // Declare parameters with defaults
-  config_node->declare_parameter("robot_ip", "192.168.12.1");
-  config_node->declare_parameter("local_port", 8090);
-  config_node->declare_parameter("remote_port", 8082);
+  auto node = std::make_shared<LeggedControllerNode>();
 
-  // Retrieve parameters
-  std::string robot_ip = config_node->get_parameter("robot_ip").as_string();
-  int local_port = config_node->get_parameter("local_port").as_int();
-  int remote_port = config_node->get_parameter("remote_port").as_int();
-
-  RCLCPP_INFO(config_node->get_logger(), "Connecting to Robot at %s (Local: %d, Remote: %d)", 
-              robot_ip.c_str(), local_port, remote_port);
-
-  // Create the shared interface with loaded configuration
-  auto interface = std::make_shared<LeggedRobotInterface>(robot_ip, local_port, remote_port);
-
-  // Create Worker Nodes
-  auto udp_node = std::make_shared<LeggedUDPLoop>(interface);
-  auto rx_node = std::make_shared<LeggedDataRX>(interface);
-  auto tx_node = std::make_shared<LeggedControl>(interface);
-
-  // Executor
+  // Use a MultiThreadedExecutor to allow callbacks from separate groups to run in parallel
   rclcpp::executors::MultiThreadedExecutor executor;
-  // We add config_node to the executor so it can respond to parameter events if needed later
-  executor.add_node(config_node); 
-  executor.add_node(udp_node);
-  executor.add_node(rx_node);
-  executor.add_node(tx_node);
-
+  executor.add_node(node);
   executor.spin();
 
   rclcpp::shutdown();

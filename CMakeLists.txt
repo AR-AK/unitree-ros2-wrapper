@@ -92,7 +92,7 @@ add_executable(legged_controller src/legged_controller.cpp)
 
 # Set dependencies
 ament_export_dependencies(rosidl_default_runtime) 
-ament_target_dependencies(legged_controller rclcpp std_msgs geometry_msgs sensor_msgs nav_msgs)
+ament_target_dependencies(legged_controller rclcpp std_msgs geometry_msgs sensor_msgs nav_msgs tf2 tf2_ros)
 
 # Link SDK and System Libs
 target_link_libraries(legged_controller
