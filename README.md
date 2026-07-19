@@ -17,7 +17,7 @@ This package is written in C++17, replacing old Boost dependencies with standard
 * **IMU & Odometry Covariances**: Populates diagonal covariance matrices on IMU and Odometry topics, enabling integration with EKF estimators (such as `robot_localization`).
 * **Dynamic Parameter Tuning**: Allows adjustment of variables—such as the watchdog timeout, TF broadcasting, and foot contact force thresholds—at runtime.
 * **Standard Joint State Publishing**: Consolidates the 12 joint states into a single standard `sensor_msgs/msg/JointState` topic, matching official Unitree Go1 URDF configurations.
-* **Foot Contact Trackers**: Compares raw foot airbag pressure values against force thresholds to publish discrete boolean contact indicators.
+* **Foot Contact Tracker**: Gathers contact states for all 4 feet simultaneously and publishes them in a single, perfectly synchronized topic `/go1/legged_data/sensors/foot_contacts`.
 * **Embedded Diagnostics**: Monitors brushless motor temperatures and battery State of Charge (SOC), logging warning messages when values exceed standard operating limits.
 
 ---
@@ -66,10 +66,7 @@ All topics are published under the standard namespace `/go1/` when launched usin
 | `odom` | `nav_msgs/msg/Odometry` | Best Effort | 500 Hz | Robot odometry (pose & twist) containing pose and twist covariances. |
 | `joint_states` | `sensor_msgs/msg/JointState` | Best Effort | 500 Hz | Consolidated joint positions, velocities, and torques. Compatible with `robot_state_publisher`. |
 | `legged_data/sensors/imu` | `sensor_msgs/msg/Imu` | Best Effort | 500 Hz | Linear acceleration, angular velocity, and orientation quaternion containing covariance matrices. |
-| `legged_data/sensors/foot_contact/fr` | `std_msgs/msg/Bool` | Reliable | 10 Hz | Ground contact state of the Front Right foot. |
-| `legged_data/sensors/foot_contact/fl` | `std_msgs/msg/Bool` | Reliable | 10 Hz | Ground contact state of the Front Left foot. |
-| `legged_data/sensors/foot_contact/rr` | `std_msgs/msg/Bool` | Reliable | 10 Hz | Ground contact state of the Rear Right foot. |
-| `legged_data/sensors/foot_contact/rl` | `std_msgs/msg/Bool` | Reliable | 10 Hz | Ground contact state of the Rear Left foot. |
+| `legged_data/sensors/foot_contacts` | `unitree_ros2_cpp/msg/FootContact` | Reliable | 10 Hz | Dynamic ground contact flags for all 4 feet (`fr`, `fl`, `rr`, `rl`) simultaneously. |
 | `legged_data/sensors/bms` | `unitree_ros2_cpp/msg/BmsState` | Reliable | 1 Hz | Battery diagnostics (voltages, SoC, current, cycles). |
 | `legged_data/sensors/foot_force` | `unitree_ros2_cpp/msg/HighState` | Reliable | 10 Hz | Raw foot force airbag sensor outputs. |
 | `legged_data/sensors/system_temperature` | `sensor_msgs/msg/Temperature` | Reliable | 1 Hz | Temperature of the IMU sensor. |

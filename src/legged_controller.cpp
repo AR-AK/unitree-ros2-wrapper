@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Unitree Go1 Controller for ROS 2
+ * Production Grade Unitree Go1 Controller for ROS 2
  */
 
 #include <chrono>
@@ -43,6 +43,7 @@
 #include "unitree_ros2_cpp/msg/high_state.hpp"
 #include "unitree_ros2_cpp/msg/high_cmd.hpp"
 #include "unitree_ros2_cpp/msg/motor_state.hpp"
+#include "unitree_ros2_cpp/msg/foot_contact.hpp"
 
 // Unitree SDK
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
@@ -232,11 +233,8 @@ public:
     pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", sensor_qos);
     pub_joint_states_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", sensor_qos);
 
-    // Individual contact publishers
-    pub_contact_fr_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/fr", 10);
-    pub_contact_fl_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/fl", 10);
-    pub_contact_rr_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/rr", 10);
-    pub_contact_rl_ = this->create_publisher<std_msgs::msg::Bool>("legged_data/sensors/foot_contact/rl", 10);
+    // Unified contact publisher
+    pub_foot_contacts_ = this->create_publisher<unitree_ros2_cpp::msg::FootContact>("legged_data/sensors/foot_contacts", 10);
 
     for (int i = 0; i < 12; ++i) {
         std::string topic = "legged_data/actuators/motor_" + std::to_string(i);
@@ -477,21 +475,13 @@ private:
     height_msg.foot_raise_height = state.footRaiseHeight;
     pub_foot_raise_->publish(height_msg);
 
-    // --- Foot Contact Monitoring based on force thresholds ---
-    auto contact_fr = std_msgs::msg::Bool();
-    auto contact_fl = std_msgs::msg::Bool();
-    auto contact_rr = std_msgs::msg::Bool();
-    auto contact_rl = std_msgs::msg::Bool();
-
-    contact_fr.data = state.footForce[0] > foot_contact_threshold_;
-    contact_fl.data = state.footForce[1] > foot_contact_threshold_;
-    contact_rr.data = state.footForce[2] > foot_contact_threshold_;
-    contact_rl.data = state.footForce[3] > foot_contact_threshold_;
-
-    pub_contact_fr_->publish(contact_fr);
-    pub_contact_fl_->publish(contact_fl);
-    pub_contact_rr_->publish(contact_rr);
-    pub_contact_rl_->publish(contact_rl);
+    // --- Foot Contact Monitoring (Consolidated single message) ---
+    auto contact_msg = unitree_ros2_cpp::msg::FootContact();
+    contact_msg.fr = state.footForce[0] > foot_contact_threshold_;
+    contact_msg.fl = state.footForce[1] > foot_contact_threshold_;
+    contact_msg.rr = state.footForce[2] > foot_contact_threshold_;
+    contact_msg.rl = state.footForce[3] > foot_contact_threshold_;
+    pub_foot_contacts_->publish(contact_msg);
   }
 
   void fast_callback()
@@ -634,11 +624,8 @@ private:
   rclcpp::Publisher<unitree_ros2_cpp::msg::HighState>::SharedPtr pub_foot_raise_;
   rclcpp::Publisher<unitree_ros2_cpp::msg::MotorState>::SharedPtr pub_motors_[12];
 
-  // Individual contact publishers
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_fr_;
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_fl_;
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_rr_;
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_contact_rl_;
+  // Unified contact publisher
+  rclcpp::Publisher<unitree_ros2_cpp::msg::FootContact>::SharedPtr pub_foot_contacts_;
 
   // Subscriptions
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_;
